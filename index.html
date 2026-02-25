@@ -1240,8 +1240,9 @@
       var isMob = bp === 'mobile';
       const [scrolled, setScrolled] = useState(false);
       const [menuOpen, setMenuOpen] = useState(false);
-      const [soundOn, setSoundOn] = useState(true);
+      const [soundOn, setSoundOn] = useState(false);
       const [hideNav, setHideNav] = useState(false);
+      const audioUnlocked = useRef(false);
       // Hide nav when robot section is in view
       useEffect(() => {
         var robotEl = document.getElementById('robot');
@@ -1276,11 +1277,31 @@
         return function () { window.removeEventListener('scroll', onScroll); };
       }, []);
 
+      // Unlock audio on first user interaction, then auto-enable sound
+      useEffect(() => {
+        var unlock = function () {
+          if (audioUnlocked.current) return;
+          audioUnlocked.current = true;
+          setSoundOn(true);
+          ['click', 'touchstart', 'scroll', 'mousedown', 'keydown'].forEach(function (e) {
+            document.removeEventListener(e, unlock);
+          });
+        };
+        ['click', 'touchstart', 'scroll', 'mousedown', 'keydown'].forEach(function (e) {
+          document.addEventListener(e, unlock);
+        });
+        return function () {
+          ['click', 'touchstart', 'scroll', 'mousedown', 'keydown'].forEach(function (e) {
+            document.removeEventListener(e, unlock);
+          });
+        };
+      }, []);
+
       useEffect(() => {
         globalSoundOn = soundOn;
         if (soundOn) {
           globalMusic.play().catch(function () { });
-          // Don't start space loop here — it starts via scroll crossfade
+          musicTargetVol = 0.3;
         } else {
           globalMusic.pause();
           stopSpaceLoop();
@@ -3250,20 +3271,6 @@
 
       var handleLoaded = function () {
         setPhase('ready');
-        // Sound starts on first user interaction
-        var started = false;
-        var startSound = function () {
-          if (started) return;
-          started = true;
-          globalSoundOn = true;
-          globalMusic.play().catch(function () { });
-          ['click', 'touchstart', 'scroll', 'mousedown', 'keydown'].forEach(function (evt) {
-            document.removeEventListener(evt, startSound);
-          });
-        };
-        ['click', 'touchstart', 'scroll', 'mousedown', 'keydown'].forEach(function (evt) {
-          document.addEventListener(evt, startSound, { once: true });
-        });
       };
 
       return (
