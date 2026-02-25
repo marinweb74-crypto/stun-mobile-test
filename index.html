@@ -1277,24 +1277,28 @@
         return function () { window.removeEventListener('scroll', onScroll); };
       }, []);
 
-      // Unlock audio on first user interaction, then auto-enable sound
+      // Try to play immediately, fallback to first interaction
       useEffect(() => {
-        var unlock = function () {
+        var tryPlay = function () {
           if (audioUnlocked.current) return;
           audioUnlocked.current = true;
           setSoundOn(true);
-          ['click', 'touchstart', 'scroll', 'mousedown', 'keydown'].forEach(function (e) {
-            document.removeEventListener(e, unlock);
-          });
         };
-        ['click', 'touchstart', 'scroll', 'mousedown', 'keydown'].forEach(function (e) {
-          document.addEventListener(e, unlock);
+        // Attempt immediate play
+        globalMusic.play().then(function () {
+          tryPlay();
+        }).catch(function () {
+          // Browser blocked — wait for interaction
+          var unlock = function () {
+            tryPlay();
+            ['click', 'touchstart', 'scroll', 'mousedown', 'keydown'].forEach(function (e) {
+              document.removeEventListener(e, unlock);
+            });
+          };
+          ['click', 'touchstart', 'scroll', 'mousedown', 'keydown'].forEach(function (e) {
+            document.addEventListener(e, unlock);
+          });
         });
-        return function () {
-          ['click', 'touchstart', 'scroll', 'mousedown', 'keydown'].forEach(function (e) {
-            document.removeEventListener(e, unlock);
-          });
-        };
       }, []);
 
       useEffect(() => {
