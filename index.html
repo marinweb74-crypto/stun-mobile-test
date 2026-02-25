@@ -1741,19 +1741,6 @@
           }, { threshold: 0.3 });
           cardEls.forEach(function (el) { flipObs.observe(el); });
 
-          // EXPERTISE slide animation on mobile
-          var mobSlideObs = new IntersectionObserver(function (entries) {
-            if (entries[0].isIntersecting) {
-              setTimeout(function () {
-                if (expertiseRef.current) {
-                  expertiseRef.current.style.paddingLeft = (window.innerWidth * 0.15) + 'px';
-                }
-              }, 300);
-              mobSlideObs.disconnect();
-            }
-          }, { threshold: 0.05 });
-          mobSlideObs.observe(section);
-
           // Make cards container sticky so About can overlap the last card
           var stickyWrap = sectionRef.current.querySelector('[data-cards-wrap]');
           if (stickyWrap) {
@@ -1766,7 +1753,7 @@
             section.style.height = (contentH + vh) + 'px';
           }
 
-          return function () { flipObs.disconnect(); mobSlideObs.disconnect(); };
+          return function () { flipObs.disconnect(); };
         }
 
         var onScroll = function () {
@@ -1949,9 +1936,7 @@
                     right: isMob ? 'auto' : '0', left: isMob ? 0 : 'auto',
                     maxWidth: '458px', width: 'max-content',
                     letterSpacing: 'normal', textTransform: 'none', lineHeight: 'normal',
-                    opacity: isMob ? 1 : 0,
-                    transform: isMob ? 'none' : 'translateX(-30px)',
-                    transition: 'opacity 0.6s ease, transform 0.6s ease',
+                    opacity: 1,
                   }}>
                     <p style={{
                       fontSize: isMob ? '14px' : '20px', textTransform: 'uppercase', letterSpacing: '1.6px',
@@ -1989,61 +1974,79 @@
                     transformOrigin: 'center center',
                     transformStyle: 'preserve-3d',
                   }}>
-                    {/* Back — Stellated Void */}
+                    {/* Back — Art Deco blue */}
                     <div data-back="" style={{
                       position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
                       borderRadius: '20px',
-                      background: '#0a0a0a',
-                      border: '4px solid #1a2ffb',
+                      background: 'linear-gradient(145deg, #2238fc 0%, #0d1a9e 100%)',
+                      boxShadow: '0 25px 80px rgba(26,47,251,0.25), 0 8px 20px rgba(0,0,0,0.1)',
                       overflow: 'hidden',
                       backfaceVisibility: 'hidden',
                       transform: 'rotateY(180deg)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
                     }}>
-                      {/* Grid pattern */}
-                      <div style={{
-                        position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                        backgroundImage: [
-                          'linear-gradient(0deg, rgba(26,47,251,0.07) 1px, transparent 1px)',
-                          'linear-gradient(90deg, rgba(26,47,251,0.07) 1px, transparent 1px)',
-                          'linear-gradient(45deg, rgba(26,47,251,0.035) 1px, transparent 1px)',
-                          'linear-gradient(-45deg, rgba(26,47,251,0.035) 1px, transparent 1px)'
-                        ].join(', '),
-                        backgroundSize: '40px 40px, 40px 40px, 56px 56px, 56px 56px',
-                      }} />
-                      {/* Cross glyph */}
-                      <svg viewBox="0 0 200 200" fill="none" style={{ width: '40%', height: '40%', opacity: 0.15 }}>
-                        <line x1="100" y1="10" x2="100" y2="190" stroke="#1a2ffb" strokeWidth="2" />
-                        <line x1="10" y1="100" x2="190" y2="100" stroke="#1a2ffb" strokeWidth="2" />
-                        <circle cx="100" cy="100" r="55" stroke="#1a2ffb" strokeWidth="1.5" />
-                        <circle cx="100" cy="100" r="28" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-                        <polygon points="100,25 118,78 175,100 118,122 100,175 82,122 25,100 82,78" stroke="#1a2ffb" strokeWidth="1" opacity="0.8" />
+                      <svg viewBox="0 0 420 560" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+                        <g stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="16" y="16" width="388" height="528" rx="10" strokeWidth="3" />
+                          <rect x="28" y="28" width="364" height="504" rx="6" strokeWidth="2" />
+                          <circle cx="28" cy="28" r="8" /><circle cx="28" cy="28" r="3" fill="rgba(255,255,255,0.6)" />
+                          <circle cx="392" cy="28" r="8" /><circle cx="392" cy="28" r="3" fill="rgba(255,255,255,0.6)" />
+                          <circle cx="28" cy="532" r="8" /><circle cx="28" cy="532" r="3" fill="rgba(255,255,255,0.6)" />
+                          <circle cx="392" cy="532" r="8" /><circle cx="392" cy="532" r="3" fill="rgba(255,255,255,0.6)" />
+                          <path d="M 145 28 Q 210 95 275 28" />
+                          <path d="M 165 28 Q 210 75 255 28" />
+                          <circle cx="210" cy="58" r="10" />
+                          <circle cx="210" cy="58" r="4" fill="rgba(255,255,255,0.6)" />
+                          <line x1="186" y1="42" x2="234" y2="42" strokeWidth="3.5" />
+                          <line x1="192" y1="76" x2="228" y2="76" strokeWidth="3.5" />
+                          <circle cx="178" cy="58" r="3" fill="rgba(255,255,255,0.6)" />
+                          <circle cx="242" cy="58" r="3" fill="rgba(255,255,255,0.6)" />
+                          <path d="M 145 532 Q 210 465 275 532" />
+                          <path d="M 165 532 Q 210 485 255 532" />
+                          <circle cx="210" cy="502" r="10" />
+                          <circle cx="210" cy="502" r="4" fill="rgba(255,255,255,0.6)" />
+                          <line x1="186" y1="518" x2="234" y2="518" strokeWidth="3.5" />
+                          <line x1="192" y1="484" x2="228" y2="484" strokeWidth="3.5" />
+                          <circle cx="178" cy="502" r="3" fill="rgba(255,255,255,0.6)" />
+                          <circle cx="242" cy="502" r="3" fill="rgba(255,255,255,0.6)" />
+                          <line x1="28" y1="130" x2="130" y2="28" strokeWidth="2" />
+                          <line x1="28" y1="170" x2="170" y2="28" strokeWidth="2" />
+                          <line x1="28" y1="210" x2="210" y2="28" strokeWidth="2" />
+                          <line x1="392" y1="130" x2="290" y2="28" strokeWidth="2" />
+                          <line x1="392" y1="170" x2="250" y2="28" strokeWidth="2" />
+                          <line x1="392" y1="210" x2="210" y2="28" strokeWidth="2" />
+                          <line x1="28" y1="430" x2="130" y2="532" strokeWidth="2" />
+                          <line x1="28" y1="390" x2="170" y2="532" strokeWidth="2" />
+                          <line x1="28" y1="350" x2="210" y2="532" strokeWidth="2" />
+                          <line x1="392" y1="430" x2="290" y2="532" strokeWidth="2" />
+                          <line x1="392" y1="390" x2="250" y2="532" strokeWidth="2" />
+                          <line x1="392" y1="350" x2="210" y2="532" strokeWidth="2" />
+                          <line x1="210" y1="90" x2="210" y2="195" />
+                          <line x1="210" y1="365" x2="210" y2="470" />
+                          <line x1="60" y1="280" x2="135" y2="280" />
+                          <line x1="285" y1="280" x2="360" y2="280" />
+                          <circle cx="210" cy="130" r="3" fill="rgba(255,255,255,0.6)" />
+                          <circle cx="210" cy="430" r="3" fill="rgba(255,255,255,0.6)" />
+                          <circle cx="28" cy="280" r="5" /><circle cx="28" cy="280" r="2" fill="rgba(255,255,255,0.6)" />
+                          <circle cx="392" cy="280" r="5" /><circle cx="392" cy="280" r="2" fill="rgba(255,255,255,0.6)" />
+                          <circle cx="210" cy="28" r="5" /><circle cx="210" cy="28" r="2" fill="rgba(255,255,255,0.6)" />
+                          <circle cx="210" cy="532" r="5" /><circle cx="210" cy="532" r="2" fill="rgba(255,255,255,0.6)" />
+                          <polygon points="210,155 335,280 210,405 85,280" strokeWidth="1.5" />
+                          <polygon points="210,180 310,280 210,380 110,280" strokeWidth="2" />
+                          <polygon points="210,205 285,280 210,355 135,280" strokeWidth="1" />
+                          <circle cx="210" cy="280" r="52" strokeWidth="2" />
+                          <circle cx="210" cy="280" r="44" strokeWidth="1" />
+                          <path d="M 210 240 C 230 240 240 255 240 270 C 250 270 260 280 250 290 C 260 290 260 310 240 310 C 240 320 230 330 210 320 C 190 330 180 320 180 310 C 160 310 160 290 170 290 C 160 280 170 270 180 270 C 180 255 190 240 210 240 Z" strokeWidth="1.5" />
+                          <circle cx="210" cy="155" r="4" fill="rgba(255,255,255,0.6)" />
+                          <circle cx="335" cy="280" r="4" fill="rgba(255,255,255,0.6)" />
+                          <circle cx="210" cy="405" r="4" fill="rgba(255,255,255,0.6)" />
+                          <circle cx="85" cy="280" r="4" fill="rgba(255,255,255,0.6)" />
+                          <line x1="145" y1="215" x2="80" y2="150" strokeWidth="1.5" />
+                          <line x1="275" y1="215" x2="340" y2="150" strokeWidth="1.5" />
+                          <line x1="145" y1="345" x2="80" y2="410" strokeWidth="1.5" />
+                          <line x1="275" y1="345" x2="340" y2="410" strokeWidth="1.5" />
+                        </g>
+                        <text x="210" y="295" textAnchor="middle" fill="rgba(255,255,255,0.75)" fontSize="42" fontFamily="Onest, sans-serif" fontWeight="700">S</text>
                       </svg>
-                      {/* STUN text */}
-                      <div style={{
-                        position: 'absolute',
-                        fontFamily: 'Archivo, sans-serif',
-                        fontSize: isMob ? '42px' : '56px',
-                        fontWeight: 700,
-                        color: 'rgba(255,255,255,0.05)',
-                        letterSpacing: '0.2em',
-                      }}>STUN</div>
-                      {/* Corner accents */}
-                      <div style={{ position: 'absolute', top: '16px', left: '16px', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(26,47,251,0.5)' }} />
-                      <div style={{ position: 'absolute', top: '16px', right: '16px', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(26,47,251,0.5)' }} />
-                      <div style={{ position: 'absolute', bottom: '16px', left: '16px', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(26,47,251,0.5)' }} />
-                      <div style={{ position: 'absolute', bottom: '16px', right: '16px', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(26,47,251,0.5)' }} />
-                      {/* Service hint */}
-                      <div style={{
-                        position: 'absolute', bottom: '20px',
-                        fontFamily: 'IBM Plex Mono, monospace',
-                        fontSize: '10px',
-                        color: 'rgba(26,47,251,0.35)',
-                        letterSpacing: '0.2em',
-                        textTransform: 'uppercase',
-                      }}>{s.num} // {s.title}</div>
                     </div>
                     {/* Front — blue with content */}
                     <div data-front="" style={{
