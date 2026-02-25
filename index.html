@@ -1,0 +1,3315 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STUN Agency</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/DRACOLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.24.0/babel.min.js"></script>
+  <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
+  <script>window.onerror = function (m, s, l, c, e) { document.body.innerHTML = '<pre style="color:red;padding:40px;font-size:14px">' + m + '\n\nLine: ' + l + '\n' + (e && e.stack || '') + '</pre>'; }</script>
+  <script>
+    window.__geoCache = null;
+    (function () { try { var r = indexedDB.open('stunGeo', 1); r.onupgradeneeded = function (e) { e.target.result.createObjectStore('g') }; r.onsuccess = function (e) { try { var tx = e.target.result.transaction('g', 'readonly'); var g = tx.objectStore('g').get('c1'); g.onsuccess = function () { window.__geoCache = g.result || null }; g.onerror = function () { } } catch (ex) { } }; r.onerror = function () { } } catch (ex) { } })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&family=Onest:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&family=Unbounded:wght@600&display=swap"
+    rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { dark: '#0a0a0a', surface: '#111111', accent: '#1a2ffb', light: '#f0f1fa' },
+          fontFamily: { sans: ['Onest', 'sans-serif'], mono: ['IBM Plex Mono', 'monospace'], display: ['Archivo', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    [data-scene-rect],
+    [data-scene-rect] canvas {
+      cursor: none !important;
+    }
+
+    html {
+      scroll-behavior: auto;
+    }
+
+    body {
+      font-family: 'Onest', sans-serif;
+      font-weight: 500;
+      overflow-x: hidden;
+    }
+
+    /* Glitch effect for ANOMALIES */
+    .glitch {
+      position: relative;
+      display: inline-block;
+    }
+
+    .glitch::before,
+    .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .glitch::before {
+      color: #1a2ffb;
+      animation: glitch-1 4s infinite linear;
+      clip-path: inset(0 0 0 0);
+    }
+
+    .glitch::after {
+      color: #ff003c;
+      animation: glitch-2 4s infinite linear;
+      clip-path: inset(0 0 0 0);
+    }
+
+    @keyframes glitch-1 {
+
+      0%,
+      88% {
+        clip-path: inset(0 100% 0 0);
+        opacity: 0;
+      }
+
+      89% {
+        clip-path: inset(20% 0 50% 0);
+        opacity: 0.8;
+        transform: translate(-4px, -2px);
+      }
+
+      90% {
+        clip-path: inset(60% 0 10% 0);
+        opacity: 0.8;
+        transform: translate(3px, 1px);
+      }
+
+      91% {
+        clip-path: inset(10% 0 70% 0);
+        opacity: 0.8;
+        transform: translate(-2px, 3px);
+      }
+
+      92% {
+        clip-path: inset(40% 0 30% 0);
+        opacity: 0.8;
+        transform: translate(4px, -1px);
+      }
+
+      93%,
+      100% {
+        clip-path: inset(0 100% 0 0);
+        opacity: 0;
+        transform: translate(0);
+      }
+    }
+
+    @keyframes glitch-2 {
+
+      0%,
+      90% {
+        clip-path: inset(0 100% 0 0);
+        opacity: 0;
+      }
+
+      91% {
+        clip-path: inset(50% 0 20% 0);
+        opacity: 0.8;
+        transform: translate(4px, 2px);
+      }
+
+      92% {
+        clip-path: inset(15% 0 55% 0);
+        opacity: 0.8;
+        transform: translate(-3px, -1px);
+      }
+
+      94% {
+        clip-path: inset(25% 0 45% 0);
+        opacity: 0.8;
+        transform: translate(-4px, 1px);
+      }
+
+      95%,
+      100% {
+        clip-path: inset(0 100% 0 0);
+        opacity: 0;
+        transform: translate(0);
+      }
+    }
+
+    @keyframes marquee {
+      0% {
+        transform: translateX(0);
+      }
+
+      100% {
+        transform: translateX(-50%);
+      }
+    }
+
+    @keyframes marquee-reverse {
+      0% {
+        transform: translateX(-50%);
+      }
+
+      100% {
+        transform: translateX(0);
+      }
+    }
+
+
+    /* Global custom cursor */
+    .global-cursor {
+      position: fixed;
+      pointer-events: none;
+      z-index: 99999;
+      width: 40px;
+      height: 40px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s, border-color 0.3s;
+      mix-blend-mode: difference;
+      background: transparent;
+    }
+
+    .global-cursor.hovering {
+      width: 80px;
+      height: 80px;
+      background: #fff;
+      border-color: #fff;
+    }
+
+    /* Crosshair for Robot Scan */
+    body.hovering-head .global-cursor {
+      width: 60px;
+      height: 60px;
+      border-color: #ff003c;
+      background: transparent;
+      mix-blend-mode: normal;
+    }
+
+    body.hovering-head .global-cursor::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 8px;
+      height: 8px;
+      background: #ff003c;
+      border-radius: 50%;
+    }
+
+    body.hovering-head .global-cursor::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: -10px;
+      right: -10px;
+      height: 1px;
+      background: rgba(255, 0, 60, 0.5);
+      transform: translateY(-50%);
+      z-index: -1;
+    }
+
+    @media (hover: hover) {
+      * {
+        cursor: none !important;
+      }
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+
+      *,
+      [data-scene-rect],
+      [data-scene-rect] canvas {
+        cursor: auto !important;
+      }
+
+      .global-cursor,
+      .cursor-triangle {
+        display: none !important;
+      }
+    }
+
+    .font-display {
+      font-family: 'Archivo', sans-serif;
+      font-weight: 700;
+    }
+
+    .font-mono {
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 500;
+    }
+
+    /* Triangle cursor */
+    .cursor-triangle {
+      position: fixed;
+      pointer-events: none;
+      z-index: 10000;
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-bottom: 14px solid #f0f1fa;
+      mix-blend-mode: difference;
+      transform-origin: center center;
+      transition: border-bottom-width 0.2s, border-left-width 0.2s, border-right-width 0.2s;
+    }
+
+    .cursor-triangle.hover {
+      border-left-width: 8px;
+      border-right-width: 8px;
+      border-bottom-width: 18px;
+    }
+
+    /* Preloader */
+    @keyframes preloader-spin {
+      0% {
+        transform: rotate(0deg);
+        border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+      }
+
+      25% {
+        transform: rotate(90deg);
+        border-radius: 50% 40% 60% 50% / 60% 40% 50% 60%;
+      }
+
+      50% {
+        transform: rotate(180deg);
+        border-radius: 60% 50% 40% 70% / 50% 60% 40% 50%;
+      }
+
+      75% {
+        transform: rotate(270deg);
+        border-radius: 40% 70% 50% 60% / 70% 50% 60% 40%;
+      }
+
+      100% {
+        transform: rotate(360deg);
+        border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+      }
+    }
+
+    .preloader-blob {
+      width: 60px;
+      height: 60px;
+      background: #fff;
+      animation: preloader-spin 2s ease-in-out infinite;
+    }
+
+
+
+    /* Service items */
+    .service-item {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+    }
+
+    .service-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2rem 0;
+      cursor: none;
+      transition: opacity 0.3s;
+    }
+
+    .service-header:hover {
+      opacity: 0.7;
+    }
+
+    .service-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.5s ease, padding 0.5s ease;
+    }
+
+    .service-body.open {
+      max-height: 300px;
+      padding-bottom: 2rem;
+    }
+
+    /* Scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Magnetic letter */
+    .magnetic-letter {
+      display: inline-block;
+      transition: transform 0.3s ease-out;
+    }
+
+    .magnetic-letter:hover {
+      transform: translate(2px, -3px);
+    }
+
+    ::selection {
+      background: #1a2ffb;
+      color: #f0f1fa;
+    }
+
+    /* Sound wave animation */
+    @keyframes waveShift {
+      0% {
+        transform: translateX(0);
+      }
+
+      100% {
+        transform: translateX(-12px);
+      }
+    }
+
+    @media (max-width: 767px) {
+
+      button,
+      a,
+      [data-magnetic] {
+        min-height: 44px;
+        min-width: 44px;
+      }
+    }
+
+    @keyframes pulse-dot {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.5;
+        transform: scale(0.85);
+      }
+    }
+
+    @keyframes typing-dot {
+
+      0%,
+      100% {
+        opacity: 0.2;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    @keyframes hudScanLine {
+      0% {
+        top: 24px;
+      }
+
+      100% {
+        top: calc(100vh - 80px);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      .glitch::before,
+      .glitch::after {
+        animation: none;
+      }
+
+      .reveal {
+        transition: none;
+        opacity: 1;
+        transform: none;
+      }
+    }
+    .mobile-card-flip {
+      transform: rotateY(180deg);
+      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .mobile-card-flip.flipped {
+      transform: rotateY(360deg);
+    }
+  </style>
+</head>
+
+<body class="bg-[#0a0a0a] text-neutral-900">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useRef, useEffect, useCallback } = React;
+
+    // ========== MOBILE DETECTION ==========
+    var isMobile = (function () {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        || ('ontouchstart' in window)
+        || (navigator.maxTouchPoints > 0);
+    })();
+    var getBreakpoint = function () {
+      var w = window.innerWidth;
+      if (w < 768) return 'mobile';
+      if (w < 1024) return 'tablet';
+      return 'desktop';
+    };
+    function useBreakpoint() {
+      var [bp, setBp] = useState(getBreakpoint());
+      useEffect(function () {
+        var handler = function () { setBp(getBreakpoint()); };
+        window.addEventListener('resize', handler);
+        return function () { window.removeEventListener('resize', handler); };
+      }, []);
+      return bp;
+    }
+
+    // ========== GLOBAL AUDIO ==========
+    var globalSoundOn = false;
+    var globalMusic = new Audio('./music.mp3');
+    globalMusic.loop = true;
+    globalMusic.volume = 0.3;
+    globalMusic.preload = 'auto';
+    // Dual-buffer seamless loop for space track
+    var spaceA = new Audio('./space.mp3');
+    var spaceB = new Audio('./space.mp3');
+    spaceA.volume = 0; spaceB.volume = 0;
+    spaceA.preload = 'auto'; spaceB.preload = 'auto';
+    var spaceCurrent = spaceA;
+    var spaceNext = spaceB;
+    var spaceDuration = 12; // ~12 seconds
+    var spaceCrossfade = 2; // 2 second crossfade
+    var spaceStarted = false;
+
+    var musicTargetVol = 0.3;
+    var spaceTargetVol = 0;
+    var spaceCurrentVol = 0;
+
+    function startSpaceLoop() {
+      if (spaceStarted) return;
+      spaceStarted = true;
+      spaceCurrent.currentTime = 0;
+      spaceCurrent.play().catch(function () { });
+    }
+
+    function stopSpaceLoop() {
+      spaceStarted = false;
+      spaceA.pause(); spaceB.pause();
+      spaceA.currentTime = 0; spaceB.currentTime = 0;
+    }
+
+    // Smooth crossfade tick
+    (function crossfadeTick() {
+      var step = 0.01;
+      var mv = parseFloat(globalMusic.volume) || 0;
+      if (Math.abs(mv - musicTargetVol) > 0.005) {
+        globalMusic.volume = Math.max(0, Math.min(1, mv + (musicTargetVol > mv ? step : -step)));
+      }
+      // Smooth space target vol
+      var svStep = 0.008;
+      if (Math.abs(spaceCurrentVol - spaceTargetVol) > 0.005) {
+        spaceCurrentVol += (spaceTargetVol > spaceCurrentVol ? svStep : -svStep);
+        spaceCurrentVol = Math.max(0, Math.min(1, spaceCurrentVol));
+      }
+
+      // Dual buffer crossfade logic
+      if (spaceStarted && spaceCurrent.duration) {
+        var timeLeft = spaceCurrent.duration - spaceCurrent.currentTime;
+        if (timeLeft < spaceCrossfade && spaceNext.paused) {
+          // Start next buffer
+          spaceNext.currentTime = 0;
+          spaceNext.volume = 0;
+          spaceNext.play().catch(function () { });
+        }
+        if (timeLeft < spaceCrossfade) {
+          var fade = timeLeft / spaceCrossfade; // 1→0
+          spaceCurrent.volume = spaceCurrentVol * fade;
+          spaceNext.volume = spaceCurrentVol * (1 - fade);
+        } else {
+          spaceCurrent.volume = spaceCurrentVol;
+        }
+        // Swap when current ends
+        if (spaceCurrent.ended || spaceCurrent.currentTime >= spaceCurrent.duration - 0.05) {
+          spaceCurrent.pause();
+          var tmp = spaceCurrent;
+          spaceCurrent = spaceNext;
+          spaceNext = tmp;
+        }
+      }
+
+      requestAnimationFrame(crossfadeTick);
+    })();
+
+    // ========== PRELOADER ==========
+    function SplashScreen({ onEnter }) {
+      var containerRef = useRef(null);
+      var chosen = useRef(false);
+      var soundRef = useRef(null);
+      var muteRef = useRef(null);
+
+      var handleClick = function (withSound) {
+        if (chosen.current) return;
+        chosen.current = true;
+
+        if (withSound) {
+          globalSoundOn = true;
+          globalMusic.play().catch(function () { });
+          startSpaceLoop();
+        }
+
+        containerRef.current.style.transition = 'opacity 0.6s ease';
+        containerRef.current.style.opacity = '0';
+        setTimeout(function () { onEnter(withSound); }, 700);
+      };
+
+      // Hover scale effect
+      var onEnterIcon = function (ref) {
+        if (ref.current) ref.current.style.transform = 'scale(1.15)';
+      };
+      var onLeaveIcon = function (ref) {
+        if (ref.current) ref.current.style.transform = 'scale(1)';
+      };
+
+      return (
+        <div ref={containerRef} style={{
+          position: 'fixed', inset: 0, zIndex: 99999, background: '#0a0a0a',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: '60px',
+        }}>
+          <div style={{ display: 'flex', gap: 'clamp(24px, 6vw, 120px)', alignItems: 'center' }}>
+            {/* Sound ON */}
+            <div
+              onClick={function () { handleClick(true); }}
+              onMouseEnter={function () { onEnterIcon(soundRef); }}
+              onMouseLeave={function () { onLeaveIcon(soundRef); }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'none' }}>
+              <div ref={soundRef} style={{
+                width: 'clamp(140px, 18vw, 220px)', height: 'clamp(140px, 18vw, 220px)',
+                borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'transform 0.4s cubic-bezier(0.16,1,0.3,1), border-color 0.3s',
+                background: 'rgba(255,255,255,0.05)',
+              }}>
+                <svg width="45%" height="45%" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="#fff" stroke="none" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Mute */}
+            <div
+              onClick={function () { handleClick(false); }}
+              onMouseEnter={function () { onEnterIcon(muteRef); }}
+              onMouseLeave={function () { onLeaveIcon(muteRef); }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'none' }}>
+              <div ref={muteRef} style={{
+                width: 'clamp(140px, 18vw, 220px)', height: 'clamp(140px, 18vw, 220px)',
+                borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'transform 0.4s cubic-bezier(0.16,1,0.3,1), border-color 0.3s',
+                background: 'rgba(255,255,255,0.05)',
+              }}>
+                <svg width="45%" height="45%" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="#fff" stroke="none" />
+                  <line x1="23" y1="9" x2="17" y2="15" />
+                  <line x1="17" y1="9" x2="23" y2="15" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ========== CUSTOM CURSOR — TRIANGLE (only inside scene rect) ==========
+    function CustomCursor() {
+      const curRef = useRef(null);
+      useEffect(() => {
+        if (isMobile) return;
+        var el = curRef.current;
+        var mx = -100, my = -100, sx = -100, sy = -100;
+
+        var move = function (e) { mx = e.clientX; my = e.clientY; };
+        window.addEventListener('mousemove', move, { passive: true });
+
+        // Hover detection for interactive elements
+        var checkHover = function () {
+          var hovered = document.querySelectorAll('a:hover, button:hover, [data-magnetic]:hover, h1:hover, h2:hover, h3:hover, p:hover, span:hover, li:hover, label:hover, input:hover, textarea:hover, [data-front]:hover, [data-back]:hover');
+          if (hovered.length > 0) {
+            el.classList.add('hovering');
+          } else {
+            el.classList.remove('hovering');
+          }
+        };
+
+        var aid;
+        var tick = function () {
+          sx += (mx - sx) * 0.15;
+          sy += (my - sy) * 0.15;
+          el.style.left = sx + 'px';
+          el.style.top = sy + 'px';
+          checkHover();
+          aid = requestAnimationFrame(tick);
+        };
+        tick();
+
+        return function () {
+          cancelAnimationFrame(aid);
+          window.removeEventListener('mousemove', move);
+        };
+      }, []);
+      if (isMobile) return null;
+      return <div ref={curRef} className="global-cursor"></div>;
+    }
+
+    // ========== MAGNETIC BUTTON WRAPPER ==========
+    function MagneticWrap({ children, strength }) {
+      var ref = useRef(null);
+      var s = strength || 0.35;
+      var onMove = function (e) {
+        if (isMobile) return;
+        var el = ref.current; if (!el) return;
+        var r = el.getBoundingClientRect();
+        var cx = r.left + r.width / 2;
+        var cy = r.top + r.height / 2;
+        var dx = e.clientX - cx;
+        var dy = e.clientY - cy;
+        el.style.transform = 'translate(' + (dx * s) + 'px, ' + (dy * s) + 'px)';
+      };
+      var onLeave = function () {
+        if (ref.current) ref.current.style.transform = 'translate(0,0)';
+      };
+      return React.createElement('div', {
+        ref: ref,
+        'data-magnetic': true,
+        onMouseMove: onMove,
+        onMouseLeave: onLeave,
+        style: { transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1)', display: 'inline-flex' }
+      }, children);
+    }
+
+    // ========== FLUID GLASS TRAIL (inside rectangle only) ==========
+
+    // ========== 3D STELLATED SCENE ==========
+    function StellatedScene() {
+      var bp = useBreakpoint();
+      var isMobile = bp === 'mobile';
+      const containerRef = useRef(null);
+      const canvasRef = useRef(null);
+
+      useEffect(function () {
+        var container = containerRef.current;
+        var canvas = canvasRef.current;
+        if (!container || !canvas) return;
+
+        var w = container.clientWidth, h = container.clientHeight;
+        var scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a1a);
+
+        var fov = 45, fov2 = fov * Math.PI / 360;
+        var camera = new THREE.PerspectiveCamera(fov, w / h, 0.1, 500);
+        camera.position.set(0, 0, 80);
+
+        var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+        renderer.setSize(w, h);
+        renderer.setPixelRatio(isMobile ? Math.min(window.devicePixelRatio, 2) : Math.min(window.devicePixelRatio, 1.25));
+        renderer.outputEncoding = THREE.sRGBEncoding;
+
+        // Post-processing
+        var usePostProcessing = !isMobile;
+        var dpr, rtScale, rt, postScene, postCamera, postMat, postQuad, sMx, sMy, sVel;
+        if (usePostProcessing) {
+        dpr = Math.min(window.devicePixelRatio, 1.25);
+        rtScale = 0.6;
+        rt = new THREE.WebGLRenderTarget(w * dpr * rtScale, h * dpr * rtScale, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat, encoding: THREE.sRGBEncoding, samples: 2 });
+        postScene = new THREE.Scene();
+        postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        postMat = new THREE.ShaderMaterial({
+          uniforms: {
+            uTexture: { value: rt.texture },
+            uMouse: { value: new THREE.Vector2(0.5, 0.5) },
+            uVelocity: { value: 0.0 },
+            uRadius: { value: 0.18 },
+            uTime: { value: 0.0 }
+          },
+          vertexShader: [
+            'varying vec2 vUv;',
+            'void main() { vUv = uv; gl_Position = vec4(position, 1.0); }'
+          ].join('\n'),
+          fragmentShader: [
+            'uniform sampler2D uTexture;',
+            'uniform vec2 uMouse;',
+            'uniform float uVelocity;',
+            'uniform float uRadius;',
+            'uniform float uTime;',
+            'varying vec2 vUv;',
+            'void main() {',
+            '  vec2 uv = vUv;',
+            '  vec2 toMouse = uv - uMouse;',
+            '  float dist = length(toMouse);',
+            '  float t = smoothstep(uRadius, 0.0, dist);',
+            '  float strength = t * (0.15 + uVelocity * 0.6);',
+            '  vec2 dir = dist > 0.001 ? normalize(toMouse) : vec2(0.0);',
+            '  vec2 distorted = uv + dir * strength * 0.06;',
+            '  gl_FragColor = texture2D(uTexture, distorted);',
+            '}'
+          ].join('\n')
+        });
+        postQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMat);
+        postScene.add(postQuad);
+        sMx = 0.5; sMy = 0.5; sVel = 0.0;
+        }
+
+        // Dramatic single-source lighting — deep contrast, glossy reflections
+        scene.add(new THREE.AmbientLight(0x182040, 0.4));
+        var keyL = new THREE.DirectionalLight(0xfff5e8, 2.4);
+        keyL.position.set(-50, 60, 40);
+        scene.add(keyL);
+
+        // Minimal env map for glossy reflections
+        var pmremGen = new THREE.PMREMGenerator(renderer);
+        var envScene = new THREE.Scene();
+        envScene.background = new THREE.Color(0x0a0a12);
+        var eL1 = new THREE.PointLight(0xfff0dd, 2.5, 100);
+        eL1.position.set(-25, 20, 15);
+        envScene.add(eL1);
+        var envRT = pmremGen.fromScene(envScene);
+        scene.environment = envRT.texture;
+        pmremGen.dispose();
+
+        // Cross maker — clean smooth cross
+        var makeCross = function (sz, color) {
+          var rr = sz * 0.12, halfLen = sz * 0.35;
+          var kk = rr * 0.4, kk6 = kk / 6;
+          var rnd = rr * 0.2;
+
+          var cylY = function (x, y, z, h, r) {
+            var qr = Math.sqrt(x * x + z * z) - r + rnd;
+            var qy = (y < 0 ? -y : y) - h + rnd;
+            var mr = qr > 0 ? qr : 0, my = qy > 0 ? qy : 0;
+            return Math.min(Math.max(qr, qy), 0) + Math.sqrt(mr * mr + my * my) - rnd;
+          };
+          var cylX = function (x, y, z, h, r) {
+            var qr = Math.sqrt(y * y + z * z) - r + rnd;
+            var qx = (x < 0 ? -x : x) - h + rnd;
+            var mr = qr > 0 ? qr : 0, mx = qx > 0 ? qx : 0;
+            return Math.min(Math.max(qr, qx), 0) + Math.sqrt(mr * mr + mx * mx) - rnd;
+          };
+          var cylZ = function (x, y, z, h, r) {
+            var qr = Math.sqrt(x * x + y * y) - r + rnd;
+            var qz = (z < 0 ? -z : z) - h + rnd;
+            var mr = qr > 0 ? qr : 0, mz = qz > 0 ? qz : 0;
+            return Math.min(Math.max(qr, qz), 0) + Math.sqrt(mr * mr + mz * mz) - rnd;
+          };
+
+          var holeR = rr * 0.289, holeDep = rr * 0.575, hRnd = rr * 0.06;
+          var sdf = function (x, y, z) {
+            var dY = cylY(x, y, z, halfLen, rr);
+            var dX = cylX(x, y, z, halfLen, rr);
+            var dZ = cylZ(x, y, z, halfLen, rr);
+            var ab = dY - dX; if (ab < 0) ab = -ab;
+            var h = (kk - ab) / kk; if (h < 0) h = 0;
+            var m = (dY < dX ? dY : dX) - h * h * h * kk6;
+            ab = m - dZ; if (ab < 0) ab = -ab;
+            h = (kk - ab) / kk; if (h < 0) h = 0;
+            var d = (m < dZ ? m : dZ) - h * h * h * kk6;
+            var qr, qa, ax, mr, ma, s;
+            qr = Math.sqrt(y * y + z * z) - holeR + hRnd; mr = qr > 0 ? qr : 0;
+            ax = x - halfLen; if (ax < 0) ax = -ax; qa = ax - holeDep + hRnd; ma = qa > 0 ? qa : 0;
+            s = Math.min(Math.max(qr, qa), 0) + Math.sqrt(mr * mr + ma * ma) - hRnd; if (-s > d) d = -s;
+            ax = x + halfLen; if (ax < 0) ax = -ax; qa = ax - holeDep + hRnd; ma = qa > 0 ? qa : 0;
+            s = Math.min(Math.max(qr, qa), 0) + Math.sqrt(mr * mr + ma * ma) - hRnd; if (-s > d) d = -s;
+            qr = Math.sqrt(x * x + z * z) - holeR + hRnd; mr = qr > 0 ? qr : 0;
+            ax = y - halfLen; if (ax < 0) ax = -ax; qa = ax - holeDep + hRnd; ma = qa > 0 ? qa : 0;
+            s = Math.min(Math.max(qr, qa), 0) + Math.sqrt(mr * mr + ma * ma) - hRnd; if (-s > d) d = -s;
+            ax = y + halfLen; if (ax < 0) ax = -ax; qa = ax - holeDep + hRnd; ma = qa > 0 ? qa : 0;
+            s = Math.min(Math.max(qr, qa), 0) + Math.sqrt(mr * mr + ma * ma) - hRnd; if (-s > d) d = -s;
+            qr = Math.sqrt(x * x + y * y) - holeR + hRnd; mr = qr > 0 ? qr : 0;
+            ax = z - halfLen; if (ax < 0) ax = -ax; qa = ax - holeDep + hRnd; ma = qa > 0 ? qa : 0;
+            s = Math.min(Math.max(qr, qa), 0) + Math.sqrt(mr * mr + ma * ma) - hRnd; if (-s > d) d = -s;
+            ax = z + halfLen; if (ax < 0) ax = -ax; qa = ax - holeDep + hRnd; ma = qa > 0 ? qa : 0;
+            s = Math.min(Math.max(qr, qa), 0) + Math.sqrt(mr * mr + ma * ma) - hRnd; if (-s > d) d = -s;
+            return d;
+          };
+
+          var eps = rr * 0.035;
+          var sdfN = function (x, y, z) {
+            var gx = sdf(x + eps, y, z) - sdf(x - eps, y, z);
+            var gy = sdf(x, y + eps, z) - sdf(x, y - eps, z);
+            var gz = sdf(x, y, z + eps) - sdf(x, y, z - eps);
+            var l = Math.sqrt(gx * gx + gy * gy + gz * gz);
+            if (l > 1e-6) { gx /= l; gy /= l; gz /= l; }
+            return [gx, gy, gz];
+          };
+
+          var R = isMobile ? 200 : 420, ext = halfLen + rr * 1.5, st = 2 * ext / R, SS = R + 1;
+          var grid = new Float32Array(SS * SS * SS);
+          for (var iz = 0; iz < SS; iz++)
+            for (var iy = 0; iy < SS; iy++)
+              for (var ix = 0; ix < SS; ix++)
+                grid[ix + SS * (iy + SS * iz)] = sdf(-ext + ix * st, -ext + iy * st, -ext + iz * st);
+
+          var VB = [], NB = [];
+          var gv = function (a, b, c) { return grid[a + SS * (b + SS * c)]; };
+          var gp = function (a, b, c) { return [-ext + a * st, -ext + b * st, -ext + c * st]; };
+          var lp = function (p0, p1, v0, v1) {
+            var t = v0 / (v0 - v1);
+            return [p0[0] + (p1[0] - p0[0]) * t, p0[1] + (p1[1] - p0[1]) * t, p0[2] + (p1[2] - p0[2]) * t];
+          };
+          var emT = function (a, b, c) {
+            var na = sdfN(a[0], a[1], a[2]), nb = sdfN(b[0], b[1], b[2]), nc = sdfN(c[0], c[1], c[2]);
+            var e1x = b[0] - a[0], e1y = b[1] - a[1], e1z = b[2] - a[2];
+            var e2x = c[0] - a[0], e2y = c[1] - a[1], e2z = c[2] - a[2];
+            var fx = e1y * e2z - e1z * e2y, fy = e1z * e2x - e1x * e2z, fz = e1x * e2y - e1y * e2x;
+            if (fx * na[0] + fy * na[1] + fz * na[2] < 0) {
+              VB.push(a[0], a[1], a[2], c[0], c[1], c[2], b[0], b[1], b[2]);
+              NB.push(na[0], na[1], na[2], nc[0], nc[1], nc[2], nb[0], nb[1], nb[2]);
+            } else {
+              VB.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+              NB.push(na[0], na[1], na[2], nb[0], nb[1], nb[2], nc[0], nc[1], nc[2]);
+            }
+          };
+          var doT = function (ps, vs) {
+            var ins = [], outs = [];
+            for (var i = 0; i < 4; i++) { if (vs[i] < 0) ins.push(i); else outs.push(i); }
+            var n = ins.length;
+            if (n === 0 || n === 4) return;
+            if (n === 1) {
+              var a = ins[0];
+              emT(lp(ps[a], ps[outs[0]], vs[a], vs[outs[0]]), lp(ps[a], ps[outs[1]], vs[a], vs[outs[1]]), lp(ps[a], ps[outs[2]], vs[a], vs[outs[2]]));
+            } else if (n === 3) {
+              var a = outs[0];
+              emT(lp(ps[a], ps[ins[0]], vs[a], vs[ins[0]]), lp(ps[a], ps[ins[1]], vs[a], vs[ins[1]]), lp(ps[a], ps[ins[2]], vs[a], vs[ins[2]]));
+            } else {
+              var a = ins[0], b = ins[1], c = outs[0], d = outs[1];
+              var ac = lp(ps[a], ps[c], vs[a], vs[c]), ad = lp(ps[a], ps[d], vs[a], vs[d]);
+              var bc = lp(ps[b], ps[c], vs[b], vs[c]), bd = lp(ps[b], ps[d], vs[b], vs[d]);
+              emT(ac, ad, bc); emT(ad, bd, bc);
+            }
+          };
+          var TI = [[0, 7, 1, 3], [0, 7, 3, 2], [0, 7, 2, 6], [0, 7, 6, 4], [0, 7, 4, 5], [0, 7, 5, 1]];
+          for (var iz = 0; iz < R; iz++)
+            for (var iy = 0; iy < R; iy++)
+              for (var ix = 0; ix < R; ix++) {
+                var cv = [gv(ix, iy, iz), gv(ix + 1, iy, iz), gv(ix, iy + 1, iz), gv(ix + 1, iy + 1, iz),
+                gv(ix, iy, iz + 1), gv(ix + 1, iy, iz + 1), gv(ix, iy + 1, iz + 1), gv(ix + 1, iy + 1, iz + 1)];
+                var hasN = false, hasP = false;
+                for (var q = 0; q < 8; q++) { if (cv[q] < 0) hasN = true; else hasP = true; }
+                if (!hasN || !hasP) continue;
+                var cp = [gp(ix, iy, iz), gp(ix + 1, iy, iz), gp(ix, iy + 1, iz), gp(ix + 1, iy + 1, iz),
+                gp(ix, iy, iz + 1), gp(ix + 1, iy, iz + 1), gp(ix, iy + 1, iz + 1), gp(ix + 1, iy + 1, iz + 1)];
+                for (var t = 0; t < 6; t++) {
+                  var ti = TI[t];
+                  doT([cp[ti[0]], cp[ti[1]], cp[ti[2]], cp[ti[3]]], [cv[ti[0]], cv[ti[1]], cv[ti[2]], cv[ti[3]]]);
+                }
+              }
+
+          // Deduplicate vertices & average normals
+          var qS = Math.round(5 / st);
+          var vMap = {}, uV = [], uN = [], idxArr = [];
+          for (var vi = 0; vi < VB.length; vi += 3) {
+            var px = VB[vi], py = VB[vi + 1], pz = VB[vi + 2];
+            var key = Math.round(px * qS) + ',' + Math.round(py * qS) + ',' + Math.round(pz * qS);
+            if (vMap[key] === undefined) {
+              vMap[key] = uV.length / 3;
+              uV.push(px, py, pz);
+              uN.push(NB[vi], NB[vi + 1], NB[vi + 2]);
+            } else {
+              var mi = vMap[key];
+              uN[mi * 3] += NB[vi]; uN[mi * 3 + 1] += NB[vi + 1]; uN[mi * 3 + 2] += NB[vi + 2];
+            }
+            idxArr.push(vMap[key]);
+          }
+          for (var ni = 0; ni < uN.length; ni += 3) {
+            var nx = uN[ni], ny = uN[ni + 1], nz = uN[ni + 2];
+            var l = Math.sqrt(nx * nx + ny * ny + nz * nz);
+            if (l > 1e-6) { uN[ni] /= l; uN[ni + 1] /= l; uN[ni + 2] /= l; }
+          }
+
+          var geo = new THREE.BufferGeometry();
+          geo.setIndex(idxArr);
+          geo.setAttribute('position', new THREE.Float32BufferAttribute(uV, 3));
+          geo.setAttribute('normal', new THREE.Float32BufferAttribute(uN, 3));
+          geo.computeBoundingSphere();
+          var mat = new THREE.MeshStandardMaterial({
+            color: color, metalness: 0.35, roughness: 0.15,
+          });
+          return new THREE.Mesh(geo, mat);
+        };
+
+        // Viewport dimensions in world coords
+        var VH = 2 * Math.tan(fov2) * 80;
+        var VW = VH * (w / h);
+        var BX = VW / 2, BY = VH / 2, BZ = 25;
+        var pxToWorld = VH / h;
+
+        // Palette: black, deep blue, dark saturated yellow-orange
+        var palette = [
+          0x0a0a12, 0x1a2ffb,
+          0x1a2ffb, 0x0a0a12,
+          0x0a0a12, 0x1a2ffb,
+          0x1a2ffb, 0x0a0a12,
+          0x0a0a12, 0x1a2ffb,
+          0x1a2ffb, 0x0a0a12
+        ];
+
+        // Spawn 11 bodies in grid
+        var N = isMobile ? 6 : 12;
+        var B = [];
+        var cols = isMobile ? 3 : 4, rows = isMobile ? 2 : 3;
+        var cellW = (VW * 0.92) / cols;
+        var cellH = (VH * 0.92) / rows;
+        var startX = -VW * 0.46;
+        var startY = -VH * 0.46;
+        var sharedGeo = null;
+        if (window.__geoCache) {
+          sharedGeo = new THREE.BufferGeometry();
+          sharedGeo.setIndex(new THREE.BufferAttribute(new Uint32Array(window.__geoCache.idx), 1));
+          sharedGeo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(window.__geoCache.pos), 3));
+          sharedGeo.setAttribute('normal', new THREE.Float32BufferAttribute(new Float32Array(window.__geoCache.nrm), 3));
+          sharedGeo.computeBoundingSphere();
+        } else {
+          var refMesh = makeCross(54, palette[0]);
+          sharedGeo = refMesh.geometry;
+          try {
+            var cPos = new Float32Array(sharedGeo.attributes.position.array);
+            var cNrm = new Float32Array(sharedGeo.attributes.normal.array);
+            var cIdx = sharedGeo.index ? new Uint32Array(sharedGeo.index.array) : new Uint32Array(0);
+            var dbR = indexedDB.open('stunGeo', 1);
+            dbR.onupgradeneeded = function (e) { e.target.result.createObjectStore('g'); };
+            dbR.onsuccess = function (e) {
+              var tx = e.target.result.transaction('g', 'readwrite');
+              tx.objectStore('g').put({ pos: cPos, nrm: cNrm, idx: cIdx }, 'c1');
+            };
+          } catch (ex) { }
+        }
+        var sz = 54;
+        for (var i = 0; i < N; i++) {
+          var mesh = new THREE.Mesh(sharedGeo, new THREE.MeshStandardMaterial({
+            color: palette[i % palette.length], metalness: 0.35, roughness: 0.15
+          }));
+          scene.add(mesh);
+          var col = i % cols, row = Math.floor(i / cols);
+          var bx = startX + col * cellW + cellW * 0.5 + (Math.random() - 0.5) * cellW * 0.35;
+          var by = startY + row * cellH + cellH * 0.5 + (Math.random() - 0.5) * cellH * 0.35;
+          B.push({
+            m: mesh, sz: sz, rad: sz * 0.4,
+            ox: bx, oy: by,
+            dx: 0, dy: 0, dz: 0,
+            dvx: 0, dvy: 0, dvz: 0,
+            drx: 0, dry: 0, drz: 0,
+            ph: Math.random() * Math.PI * 2
+          });
+        }
+
+        // Mouse tracking
+        var mx = 0, my = 0, pmx = 0, pmy = 0, mIn = false;
+        var mdx = 0, mdy = 0, mspd = 0;
+        var projVec = new THREE.Vector3();
+
+        // Base position — pure math, ZERO jitter
+        var basePos = function (b, t) {
+          var fi = b.ph * 3.7;
+          var bx = Math.sin(t * 0.3 + fi) * BX * 0.55 + Math.sin(t * 0.17 + fi * 2.3) * BX * 0.25;
+          var by = Math.cos(t * 0.25 + fi * 1.4) * BY * 0.5 + Math.cos(t * 0.13 + fi * 0.8) * BY * 0.2;
+          var bz = Math.sin(t * 0.2 + fi * 1.7) * 12;
+          return [bx, by, bz];
+        };
+        var baseRot = function (b, t) {
+          return [
+            b.ph + Math.sin(t * 0.15 + b.ph) * 0.5,
+            b.ph * 2 + Math.cos(t * 0.12 + b.ph * 1.3) * 0.5,
+            Math.sin(t * 0.09 + b.ph * 0.7) * 0.3
+          ];
+        };
+
+        var onMove = function (e) {
+          var rect = container.getBoundingClientRect();
+          mx = e.clientX - rect.left;
+          my = e.clientY - rect.top;
+        };
+        var onEnter = function () { mIn = true; };
+        var onLeave = function () { mIn = false; };
+        container.addEventListener('mousemove', onMove);
+        container.addEventListener('mouseenter', onEnter);
+        container.addEventListener('mouseleave', onLeave);
+        var onTouch = function (e) {
+          if (e.touches.length > 0) {
+            var rect = container.getBoundingClientRect();
+            mx = e.touches[0].clientX - rect.left;
+            my = e.touches[0].clientY - rect.top;
+            mIn = true;
+          }
+        };
+        var onTouchEnd = function () { mIn = false; };
+        container.addEventListener('touchmove', onTouch, { passive: true });
+        container.addEventListener('touchstart', onTouch, { passive: true });
+        container.addEventListener('touchend', onTouchEnd);
+
+        // Pre-allocate position array (avoid GC every frame)
+        var FP = [];
+        for (var fpi = 0; fpi < N; fpi++) FP.push([0, 0, 0]);
+
+        var time = 0, aid, frameCount = 0;
+        var sceneVisible = true;
+        var visObs = new IntersectionObserver(function (entries) {
+          sceneVisible = entries[0].isIntersecting;
+          if (sceneVisible && !aid) tick();
+        }, { threshold: 0 });
+        visObs.observe(container);
+        var tick = function () {
+          if (!sceneVisible) { aid = null; return; }
+          frameCount++;
+          time = performance.now() * 0.001;
+
+          mdx = mx - pmx; mdy = my - pmy;
+          mspd = Math.sqrt(mdx * mdx + mdy * mdy);
+
+          // Compute final positions (base + displacement)
+          for (var i = 0; i < N; i++) {
+            var b = B[i];
+            var bp = basePos(b, time);
+            FP[i][0] = bp[0] + b.dx; FP[i][1] = bp[1] + b.dy; FP[i][2] = bp[2] + b.dz;
+          }
+
+          for (var i = 0; i < N; i++) {
+            var b = B[i];
+            var fx = FP[i][0], fy = FP[i][1], fz = FP[i][2];
+
+            // Cursor — full physics push (affects displacement)
+            if (mIn) {
+              projVec.set(fx, fy, fz).project(camera);
+              var sx = (projVec.x * 0.5 + 0.5) * w;
+              var sy = (-projVec.y * 0.5 + 0.5) * h;
+              var ddx = sx - mx, ddy = sy - my;
+              var dist = Math.sqrt(ddx * ddx + ddy * ddy);
+              if (dist < 180 && dist > 1) {
+                var t2 = (1 - dist / 180); t2 = t2 * t2 * t2;
+                if (mspd > 1.5) {
+                  var sw = t2 * mspd * 1.2 * pxToWorld;
+                  b.dvx += (mdx / mspd) * sw;
+                  b.dvy -= (mdy / mspd) * sw;
+                }
+                var rp = t2 * 3 * pxToWorld;
+                b.dvx += (ddx / dist) * rp;
+                b.dvy -= (ddy / dist) * rp;
+                b.dvz += (Math.random() - 0.5) * rp * 0.8;
+                b.drx += t2 * 0.06;
+                b.dry += t2 * 0.04;
+              }
+            }
+
+            // Integrate displacement
+            b.dx += b.dvx; b.dy += b.dvy; b.dz += b.dvz;
+
+            // Decay displacement + velocity (returns to base = zero jitter)
+            b.dvx *= 0.92; b.dvy *= 0.92; b.dvz *= 0.90;
+            b.dx *= 0.97; b.dy *= 0.97; b.dz *= 0.97;
+            b.drx *= 0.95; b.dry *= 0.95; b.drz *= 0.95;
+          }
+
+          // Collision on final positions — pushes displacement
+          for (var ci = 0; ci < N; ci++) {
+            for (var cj = ci + 1; cj < N; cj++) {
+              var a = B[ci], bb = B[cj];
+              var collR = (a.sz + bb.sz) * 0.5;
+              // Early exit: cheap axis-aligned check before sqrt
+              var ax = FP[ci][0], ay = FP[ci][1], az = FP[ci][2];
+              var bx2 = FP[cj][0], by2 = FP[cj][1], bz2 = FP[cj][2];
+              var ddx2 = ax - bx2, ddy2 = ay - by2, ddz2 = az - bz2;
+              if (ddx2 > collR || ddx2 < -collR || ddy2 > collR || ddy2 < -collR) continue;
+              var d = Math.sqrt(ddx2 * ddx2 + ddy2 * ddy2 + ddz2 * ddz2);
+              if (d < collR && d > 0.01) {
+                var nx = ddx2 / d, ny = ddy2 / d, nz = ddz2 / d;
+                var overlap = 1 - d / collR;
+                var push = overlap * overlap * 0.2;
+                a.dvx += nx * push; a.dvy += ny * push; a.dvz += nz * push;
+                bb.dvx -= nx * push; bb.dvy -= ny * push; bb.dvz -= nz * push;
+                var rvn = (a.dvx - bb.dvx) * nx + (a.dvy - bb.dvy) * ny + (a.dvz - bb.dvz) * nz;
+                if (rvn < 0) {
+                  a.dvx -= nx * rvn * 0.5; a.dvy -= ny * rvn * 0.5; a.dvz -= nz * rvn * 0.5;
+                  bb.dvx += nx * rvn * 0.5; bb.dvy += ny * rvn * 0.5; bb.dvz += nz * rvn * 0.5;
+                }
+                if (d < collR * 0.7) {
+                  var fix = (collR * 0.7 - d) * 0.2;
+                  a.dx += nx * fix; a.dy += ny * fix; a.dz += nz * fix;
+                  bb.dx -= nx * fix; bb.dy -= ny * fix; bb.dz -= nz * fix;
+                }
+              }
+            }
+          }
+
+          // Apply final positions & rotations
+          for (var i = 0; i < N; i++) {
+            var b = B[i];
+            var bp = basePos(b, time);
+            var br = baseRot(b, time);
+            b.m.position.set(bp[0] + b.dx, bp[1] + b.dy, bp[2] + b.dz);
+            b.m.rotation.set(br[0] + b.drx, br[1] + b.dry, br[2] + b.drz);
+          }
+
+          pmx = mx; pmy = my;
+
+          if (usePostProcessing) {
+            // Update refraction shader
+            if (mIn) {
+              sMx += (mx / w - sMx) * 0.12;
+              sMy += (1.0 - my / h - sMy) * 0.12;
+              sVel += (Math.min(mspd / 40, 1.0) - sVel) * 0.08;
+            } else {
+              sVel *= 0.92;
+            }
+            postMat.uniforms.uMouse.value.set(sMx, sMy);
+            postMat.uniforms.uVelocity.value = sVel;
+            postMat.uniforms.uTime.value = time;
+
+            renderer.setRenderTarget(rt);
+            renderer.render(scene, camera);
+            renderer.setRenderTarget(null);
+            renderer.render(postScene, postCamera);
+          } else {
+            renderer.render(scene, camera);
+          }
+          aid = requestAnimationFrame(tick);
+        };
+        tick();
+
+        var onResize = function () {
+          w = container.clientWidth; h = container.clientHeight;
+          camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h);
+          if (usePostProcessing) {
+            var d = Math.min(window.devicePixelRatio, 1.5);
+            var rtS = 0.8;
+            rt.setSize(w * d * rtS, h * d * rtS);
+          }
+          VH = 2 * Math.tan(fov2) * 80; VW = VH * (w / h); BX = VW / 2; BY = VH / 2; pxToWorld = VH / h;
+        };
+        window.addEventListener('resize', onResize);
+
+        return function () {
+          cancelAnimationFrame(aid);
+          visObs.disconnect();
+          container.removeEventListener('mousemove', onMove);
+          container.removeEventListener('mouseenter', onEnter);
+          container.removeEventListener('mouseleave', onLeave);
+          container.removeEventListener('touchmove', onTouch);
+          container.removeEventListener('touchstart', onTouch);
+          container.removeEventListener('touchend', onTouchEnd);
+          window.removeEventListener('resize', onResize);
+          if (usePostProcessing) { rt.dispose(); postMat.dispose(); }
+          scene.traverse(function (o) {
+            if (o.geometry) o.geometry.dispose();
+            if (o.material) {
+              if (Array.isArray(o.material)) o.material.forEach(function (m) { m.dispose(); });
+              else o.material.dispose();
+            }
+          });
+          renderer.dispose();
+        };
+      }, []);
+
+      return (
+        <div ref={containerRef} data-scene-rect style={{ width: '100%', height: '100%', borderRadius: '20px', overflow: 'hidden', position: 'relative' }}>
+          <canvas ref={canvasRef} style={{ display: 'block' }} />
+        </div>
+      );
+    }
+
+    // ========== NAVIGATION ==========
+    function Navigation({ initialSound }) {
+      var bp = useBreakpoint();
+      var isMob = bp === 'mobile';
+      const [scrolled, setScrolled] = useState(false);
+      const [menuOpen, setMenuOpen] = useState(false);
+      const [soundOn, setSoundOn] = useState(false);
+      const [hideNav, setHideNav] = useState(false);
+      const initDone = useRef(false);
+
+      useEffect(() => {
+        if (initialSound && !initDone.current) {
+          initDone.current = true;
+          setSoundOn(true);
+        }
+      }, [initialSound]);
+      // Hide nav when robot section is in view
+      useEffect(() => {
+        var robotEl = document.getElementById('robot');
+        if (!robotEl) return;
+        var navObs = new IntersectionObserver(function (entries) {
+          setHideNav(entries[0].isIntersecting);
+        }, { threshold: 0.3 });
+        navObs.observe(robotEl);
+        return function () { navObs.disconnect(); };
+      }, []);
+      useEffect(() => {
+        var onScroll = function () {
+          setScrolled(window.scrollY > 50);
+
+          // Crossfade: detect About section
+          var about = document.getElementById('about');
+          if (about && globalSoundOn) {
+            var rect = about.getBoundingClientRect();
+            var vh = window.innerHeight;
+            // When about section top reaches center of screen → crossfade
+            if (rect.top < vh * 0.5) {
+              musicTargetVol = 0;
+              spaceTargetVol = 0.35;
+            } else {
+              musicTargetVol = 0.3;
+              spaceTargetVol = 0;
+            }
+          }
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return function () { window.removeEventListener('scroll', onScroll); };
+      }, []);
+
+      useEffect(() => {
+        globalSoundOn = soundOn;
+        if (soundOn) {
+          globalMusic.play().catch(function () { });
+          startSpaceLoop();
+        } else {
+          globalMusic.pause();
+          stopSpaceLoop();
+        }
+      }, [soundOn]);
+      return (
+        <>
+          <nav style={{
+            position: 'fixed', width: '100%', zIndex: 9000,
+            fontSize: isMob ? '16px' : '20px', top: 0, left: 0, right: 0,
+            transition: 'padding 0.3s ease, opacity 0.4s ease, transform 0.4s ease',
+            paddingTop: scrolled ? '8px' : (isMob ? '12px' : '38px'),
+            paddingBottom: scrolled ? '8px' : '0px',
+            opacity: hideNav ? 0 : 1,
+            transform: hideNav ? 'translateY(-100%)' : 'translateY(0)',
+            pointerEvents: hideNav ? 'none' : 'auto',
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              paddingBottom: '0.1em', paddingLeft: '5%', paddingRight: '5%',
+              overflow: 'hidden',
+            }}>
+              {/* Logo */}
+              <div style={{
+                fontFamily: 'Archivo, sans-serif', fontWeight: 500,
+                fontSize: isMob ? '1.5em' : '2em', color: '#0a0a12',
+                letterSpacing: '-0.03em', textTransform: 'uppercase',
+              }}>STUN</div>
+
+              {/* Right buttons */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {/* Sound button */}
+                <MagneticWrap strength={0.4}>
+                  <button onClick={() => setSoundOn(!soundOn)} style={{
+                    fontSize: '0.9em',
+                    width: '3.2em', height: '3.2em',
+                    borderRadius: '50%', border: 'none',
+                    background: 'rgb(43, 46, 58)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'none', transition: 'background 0.3s',
+                  }} title={soundOn ? 'Выключить звук' : 'Включить звук'}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" style={{ overflow: 'hidden' }}>
+                      {soundOn ? (
+                        <g style={{ animation: 'waveShift 0.6s linear infinite' }}>
+                          <path d="M-12 12 Q-9 7, -6 12 Q-3 17, 0 12 Q3 7, 6 12 Q9 17, 12 12 Q15 7, 18 12 Q21 17, 24 12 Q27 7, 30 12 Q33 17, 36 12" stroke="#fff" strokeWidth="2" fill="none" />
+                        </g>
+                      ) : (
+                        <line x1="4" y1="12" x2="20" y2="12" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+                      )}
+                    </svg>
+                  </button>
+                </MagneticWrap>
+                {/* Let's talk */}
+                {!isMob && <MagneticWrap strength={0.4}>
+                  <a href="#contact" style={{
+                    background: 'rgb(43, 46, 58)',
+                    color: '#fff',
+                    fontSize: '0.9em', fontWeight: 500, fontFamily: 'Archivo, sans-serif',
+                    textTransform: 'uppercase',
+                    height: '3.2em',
+                    borderRadius: '106px',
+                    paddingLeft: '1.625em', paddingRight: '1.125em',
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    textDecoration: 'none',
+                    cursor: 'none',
+                    transition: 'background 0.3s',
+                  }}>
+                    Let's talk
+                    <span style={{ position: 'relative', width: '1.15em', height: '1.15em', flexShrink: 0 }}>
+                      <span style={{
+                        backgroundColor: '#fff', position: 'absolute',
+                        left: '50%', top: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: '0.3125em', height: '0.3125em',
+                        borderRadius: '100%', display: 'block',
+                      }}></span>
+                    </span>
+                  </a>
+                </MagneticWrap>}
+                {/* Menu */}
+                <MagneticWrap strength={0.4}>
+                  <button onClick={() => setMenuOpen(!menuOpen)} style={{
+                    background: 'rgb(228, 230, 239)',
+                    color: '#000',
+                    fontSize: '0.9em', fontWeight: 500, fontFamily: 'Archivo, sans-serif',
+                    textTransform: 'uppercase',
+                    height: '3.2em',
+                    borderRadius: '106px',
+                    paddingLeft: '1.625em', paddingRight: '1.125em',
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    border: 'none',
+                    cursor: 'none',
+                    transition: 'background 0.3s',
+                  }}>
+                    <span style={{ display: 'inline-grid', overflow: 'hidden', height: '1.2em', alignItems: 'center' }}>
+                      <span style={{
+                        gridArea: '1 / 1',
+                        transition: 'transform 0.3s, opacity 0.3s',
+                        transform: menuOpen ? 'translateY(-100%)' : 'translateY(0)',
+                        opacity: menuOpen ? 0 : 1,
+                      }}>Menu</span>
+                      <span style={{
+                        gridArea: '1 / 1',
+                        transition: 'transform 0.3s, opacity 0.3s',
+                        transform: menuOpen ? 'translateY(0)' : 'translateY(100%)',
+                        opacity: menuOpen ? 1 : 0,
+                      }}>Close</span>
+                    </span>
+                    <div style={{ position: 'relative', width: '1.15em', height: '1.15em', flexShrink: 0 }}>
+                      <span style={{
+                        backgroundColor: '#000', position: 'absolute',
+                        left: '0.15em', top: '50%', transform: 'translateY(-50%)',
+                        display: 'inline-block', width: '0.3125em', height: '0.3125em',
+                        borderRadius: '100%',
+                      }}></span>
+                      <span style={{
+                        backgroundColor: '#000', position: 'absolute',
+                        right: '0.15em', top: '50%', transform: 'translateY(-50%)',
+                        display: 'inline-block', width: '0.3125em', height: '0.3125em',
+                        borderRadius: '100%',
+                      }}></span>
+                    </div>
+                  </button>
+                </MagneticWrap>
+              </div>
+            </div>
+          </nav>
+          {/* Fullscreen menu overlay */}
+          <div className={'fixed inset-0 z-[8999] bg-[#f0f1fa] transition-all duration-500 flex flex-col justify-center items-center ' + (menuOpen && !hideNav ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none')} style={{ gap: isMob ? '16px' : '32px' }}>
+            <a href="#services" onClick={() => setMenuOpen(false)} className="text-4xl md:text-6xl font-display hover:text-accent transition" style={{ padding: '12px 24px', minHeight: '56px', display: 'flex', alignItems: 'center' }}>Услуги</a>
+            <a href="#about" onClick={() => setMenuOpen(false)} className="text-4xl md:text-6xl font-display hover:text-accent transition" style={{ padding: '12px 24px', minHeight: '56px', display: 'flex', alignItems: 'center' }}>О нас</a>
+            <a href="#contact" onClick={() => setMenuOpen(false)} className="text-4xl md:text-6xl font-display hover:text-accent transition" style={{ padding: '12px 24px', minHeight: '56px', display: 'flex', alignItems: 'center' }}>Контакты</a>
+          </div>
+        </>
+      );
+    }
+
+    // ========== THE PROCESS (HORIZONTAL TIMELINE) ==========
+    function ProcessManifesto() {
+      var bp = useBreakpoint();
+      var isMob = bp === 'mobile';
+
+      var steps = [
+        { id: '01', title: 'DISCOVERY', desc: 'Глубокое погружение бизнес.<br />Создаем креативную концепцию.' },
+        { id: '02', title: 'PROTOTYPE', desc: 'Проектируем логику и UX.<br />Разрабатываем прототипы проектов.' },
+        { id: '03', title: 'WEBGL / 3D', desc: 'Отрисовываем UI и 3D-ассеты.<br />Пишем шейдеры и анимации.' },
+        { id: '04', title: 'LAUNCH', desc: 'Оптимизация 60 FPS и SEO.<br />Релиз и развитие продукта.' }
+      ];
+
+      return (
+        <div style={{
+          display: 'flex',
+          flexDirection: isMob ? 'column' : 'row',
+          height: isMob ? 'auto' : '80vh',
+          width: isMob ? '100%' : 'max-content',
+          padding: isMob ? '40px 5vw' : '0 15vw',
+          alignItems: isMob ? 'flex-start' : 'center',
+          gap: isMob ? '80px' : '15vw',
+          position: 'relative'
+        }}>
+          {/* Continuous horizontal line in the background */}
+          <div style={{
+            position: 'absolute',
+            top: isMob ? '0' : '50%',
+            left: isMob ? '10vw' : 0,
+            right: isMob ? 'auto' : 0,
+            bottom: isMob ? '0' : 'auto',
+            width: isMob ? '2px' : '100%',
+            height: isMob ? '100%' : '2px', // Vertical line on mobile
+            background: 'rgba(255,255,255,0.1)',
+            zIndex: 0,
+            transform: isMob ? 'translateY(0)' : 'translateY(-50%)'
+          }} />
+
+          {steps.map(function (s, i) {
+            return (
+
+              <div key={i} style={{
+                flexShrink: 0,
+                width: isMob ? '80vw' : '65vw',
+                paddingLeft: isMob ? '15vw' : '0', // Push content away from the vertical line
+                position: 'relative',
+                zIndex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
+              }}>
+                {/* Number / Node indicator */}
+                <div style={{
+                  fontFamily: 'Unbounded, sans-serif',
+                  fontSize: isMob ? '80px' : '180px',
+                  fontWeight: 800,
+                  color: 'transparent',
+                  WebkitTextStroke: '2px rgba(255,255,255,0.2)', // Thicker stroke
+                  lineHeight: 1,
+                  marginBottom: isMob ? '20px' : '30px',
+                  position: 'relative',
+                  display: 'inline-block'
+                }}>
+                  {s.id}
+                  {/* Glowing dot on the line */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: isMob ? 'calc(-10vw)' : '-80px', // Position dot on the vertical line
+                    width: isMob ? '20px' : '24px',
+                    height: isMob ? '20px' : '24px',
+                    borderRadius: '50%',
+                    background: '#1a2ffb',
+                    boxShadow: '0 0 40px #1a2ffb',
+                    transform: isMob ? 'translate(0, -50%)' : 'translateY(-50%)'
+                  }} />
+                </div>
+
+                {/* Title */}
+                <h3 style={{
+                  fontFamily: 'Onest, sans-serif',
+                  fontSize: isMob ? '60px' : '110px', // Adjusted for mobile
+                  fontWeight: 900,
+                  color: '#fff',
+                  textTransform: 'uppercase',
+                  marginBottom: isMob ? '20px' : '30px',
+                  letterSpacing: '3.2px',
+                  lineHeight: 1.1
+                }}>
+                  {s.title}
+                </h3>
+
+                {/* Description */}
+                <p style={{
+                  fontFamily: 'Onest, sans-serif',
+                  fontSize: isMob ? '20px' : '36px',
+                  fontWeight: 900,
+                  color: 'rgba(255,255,255,0.35)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '3.2px',
+                  lineHeight: 1.4,
+                  maxWidth: '95%'
+                }} dangerouslySetInnerHTML={{ __html: s.desc }} />
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // ========== ABOUT — HORIZONTAL SCROLL ==========
+    function AboutSection() {
+      var bp = useBreakpoint();
+      var isMob = bp === 'mobile';
+      var sectionRef = useRef(null);
+      var trackRef = useRef(null);
+      var scrollPRef = useRef(0);
+      var smoothP = useRef(0);
+      var statsRef = useRef([]);
+      var countDone = useRef(false);
+      var animRef = useRef(null);
+
+      var stats = [
+        { value: 50, suffix: '+', label: 'Проектов' },
+        { value: 12, suffix: '', label: 'В команде' },
+        { value: 1, suffix: 'M+', label: 'Строк кода' },
+        { value: 10, suffix: '+', label: 'Индустрий' },
+      ];
+
+
+
+      useEffect(function () {
+        var section = sectionRef.current;
+        var track = trackRef.current;
+        if (!section || !track) return;
+
+        if (!isMob) {
+          var onScroll = function () {
+            var rect = section.getBoundingClientRect();
+            var total = section.offsetHeight - window.innerHeight;
+            if (total <= 0) return;
+            scrollPRef.current = Math.max(0, Math.min(1, -rect.top / total));
+          };
+          window.addEventListener('scroll', onScroll, { passive: true });
+
+          var tick = function () {
+            smoothP.current += (scrollPRef.current - smoothP.current) * 0.25;
+            var p = smoothP.current;
+
+            // Horizontal translate: 0 → -(trackWidth - 100vw)
+            var vw = window.innerWidth;
+            var trackW = track.scrollWidth;
+            var maxShift = trackW - vw;
+            var tx = -p * maxShift;
+            track.style.transform = 'translateX(' + tx + 'px)';
+
+            animRef.current = requestAnimationFrame(tick);
+          };
+          animRef.current = requestAnimationFrame(tick);
+          onScroll();
+        }
+
+        // Count-up when stats become visible
+        var statsObs = new IntersectionObserver(function (entries) {
+          if (entries[0].isIntersecting && !countDone.current) {
+            countDone.current = true;
+            var dur = 2000;
+            var t0 = performance.now();
+            var countTick = function (now) {
+              var cp = Math.min(1, (now - t0) / dur);
+              var ease = 1 - Math.pow(1 - cp, 3);
+              for (var i = 0; i < stats.length; i++) {
+                if (statsRef.current[i]) {
+                  statsRef.current[i].textContent = Math.round(stats[i].value * ease) + stats[i].suffix;
+                }
+              }
+              if (cp < 1) requestAnimationFrame(countTick);
+            };
+            requestAnimationFrame(countTick);
+            statsObs.disconnect();
+          }
+        }, { threshold: 0.1 });
+        if (statsRef.current[0]) statsObs.observe(statsRef.current[0]);
+
+        return function () {
+          if (!isMob) {
+            window.removeEventListener('scroll', onScroll);
+            if (animRef.current) cancelAnimationFrame(animRef.current);
+          }
+          statsObs.disconnect();
+        };
+      }, [isMob]);
+
+      return (
+        <section ref={sectionRef} id="about" style={{
+          position: 'relative', background: '#0a0a0a',
+          borderRadius: '48px 48px 0 0', marginTop: isMob ? '0' : '-100vh', zIndex: 2,
+          boxShadow: '0 -20px 60px rgba(0,0,0,0.5)',
+          height: isMob ? 'auto' : '500vh',
+          paddingBottom: isMob ? '80px' : '0'
+        }}>
+          <div style={{
+            position: isMob ? 'relative' : 'sticky', top: 0, height: isMob ? 'auto' : '100vh',
+            overflow: isMob ? 'visible' : 'hidden', display: 'flex', alignItems: isMob ? 'flex-start' : 'center',
+          }}>
+            {/* Horizontal track (vertical on mobile) */}
+            <div ref={trackRef} style={{
+              display: 'flex', alignItems: isMob ? 'flex-start' : 'stretch', gap: 0,
+              flexDirection: isMob ? 'column' : 'row',
+              width: '100%',
+              willChange: isMob ? 'auto' : 'transform',
+            }}>
+
+              {/* Main panel: text + stats below */}
+              <div style={{
+                flexShrink: 0,
+                display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                height: isMob ? 'min-content' : '100vh', padding: isMob ? '120px 5vw 80px' : '0 8vw',
+                width: isMob ? '100%' : 'auto'
+              }}>
+                {/* Big text */}
+                <h2 style={{
+                  fontSize: isMob ? '14vw' : '17vw', fontWeight: 500,
+                  lineHeight: 0.9, color: '#fff', fontFamily: 'Archivo, sans-serif',
+                  textTransform: 'uppercase', letterSpacing: '-0.04em',
+                  whiteSpace: isMob ? 'normal' : 'nowrap',
+                }}>
+                  BEYOND <span style={{ color: '#1a2ffb' }}>LIMITS</span>
+                </h2>
+
+                {/* Stats row — evenly spread under the phrase */}
+                <div style={{
+                  display: isMob ? 'grid' : 'flex',
+                  gridTemplateColumns: isMob ? '1fr 1fr' : undefined,
+                  gap: isMob ? '40px 16px' : undefined,
+                  justifyContent: isMob ? undefined : 'space-between',
+                  marginTop: isMob ? '40px' : '5vh',
+                  width: '100%',
+                }}>
+                  {stats.map(function (s, i) {
+                    return (
+                      <div key={i} style={{ textAlign: isMob ? 'left' : 'center', minWidth: isMob ? undefined : '12vw' }}>
+                        <p ref={function (el) { statsRef.current[i] = el; }} style={{
+                          fontSize: isMob ? 'clamp(2rem, 12vw, 4rem)' : 'clamp(7rem, 12vw, 14rem)', fontWeight: 600,
+                          fontFamily: 'Unbounded, sans-serif', color: '#fff', lineHeight: 1,
+                          letterSpacing: '-0.02em',
+                        }}>0{s.suffix}</p>
+                        <p style={{
+                          fontSize: isMob ? '16px' : '36px', color: 'rgba(255,255,255,0.35)',
+                          textTransform: 'uppercase', letterSpacing: isMob ? '1.5px' : '3.2px',
+                          marginTop: isMob ? '10px' : '20px', fontFamily: 'Onest, sans-serif', fontWeight: 900,
+                          lineHeight: 'normal'
+                        }}>{s.label}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* The Process Timeline */}
+              <div style={{
+                display: 'flex',
+                alignItems: isMob ? 'flex-start' : 'center',
+                width: isMob ? '100%' : 'auto'
+              }}>
+                <ProcessManifesto />
+              </div>
+
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+
+    // ========== SERVICE ITEM ==========
+    function CardServices() {
+      var bp = useBreakpoint();
+      var isMob = bp === 'mobile';
+      var sectionRef = useRef(null);
+      var cardsRef = useRef([]);
+      var cardsBoxRef = useRef(null);
+      var labelRef = useRef(null);
+      var expertiseRef = useRef(null);
+      var descRef = useRef(null);
+      var animRef = useRef(null);
+      var scrollPRef = useRef(0);
+      var inViewRef = useRef(false);
+
+      var services = [
+        { num: '01', title: 'Design', letter: 'D', items: ['UX/UI Дизайн', 'Дизайн-системы', 'Прототипы'] },
+        { num: '02', title: 'Web', letter: 'W', items: ['React / Next.js', 'Three.js / WebGL', 'Анимации'] },
+        { num: '03', title: 'Copy', letter: 'C', items: ['Рерайт и копирайт', 'Дипломные работы', 'Научные статьи'] },
+        { num: '04', title: 'Dev & AI', letter: 'A', items: ['Telegram-боты', 'ИИ-интеграция', 'Автоматизация'] },
+      ];
+
+      useEffect(function () {
+        var section = sectionRef.current;
+        if (!section) return;
+
+        if (isMob) {
+          // Mobile: flip cards on scroll into view
+          var cardEls = cardsRef.current.filter(Boolean);
+          var flipObs = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) {
+                var idx = cardEls.indexOf(entry.target);
+                var delay = idx >= 0 ? idx * 150 : 0;
+                setTimeout(function () {
+                  entry.target.classList.add('flipped');
+                }, delay);
+                flipObs.unobserve(entry.target);
+              }
+            });
+          }, { threshold: 0.3 });
+          cardEls.forEach(function (el) { flipObs.observe(el); });
+          return function () { flipObs.disconnect(); };
+        }
+
+        var onScroll = function () {
+          var rect = section.getBoundingClientRect();
+          var total = section.offsetHeight - window.innerHeight;
+          if (total <= 0) return;
+          scrollPRef.current = Math.max(0, Math.min(1, -rect.top / total));
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+
+        // IntersectionObserver — trigger EXPERTISE slide + description on appear
+        var observer = new IntersectionObserver(function (entries) {
+          if (entries[0].isIntersecting && !inViewRef.current) {
+            inViewRef.current = true;
+            setTimeout(function () {
+              if (expertiseRef.current) {
+                expertiseRef.current.style.paddingLeft = (window.innerWidth * 0.33) + 'px';
+              }
+            }, 400);
+            if (descRef.current) {
+              descRef.current.style.transform = 'translateX(0)';
+              descRef.current.style.opacity = '1';
+            }
+            observer.disconnect();
+          }
+        }, { threshold: 0.05 });
+        observer.observe(section);
+
+        var t0 = performance.now();
+        // Smoothed scroll value for buttery interpolation
+        var smoothP = 0;
+
+        var animate = function (now) {
+          var t = (now - t0) / 1000;
+
+          // Lerp scroll position — clamped max speed so fast scrolling doesn't affect animation pace
+          var delta = scrollPRef.current - smoothP;
+          var step = delta * 0.08;
+          var maxStep = 0.004;
+          step = Math.sign(step) * Math.min(Math.abs(step), maxStep);
+          smoothP += step;
+          var p = smoothP;
+
+          var vw = window.innerWidth;
+          var cardW = 420;
+          var gap = 40;
+          var totalW = cardW * 4 + gap * 3;
+          var sc = Math.min(1, (vw * 0.92) / totalW);
+          var spacing = (cardW + gap) * sc;
+
+          // Quintic ease in-out for ultra smooth
+          var smoothEase = function (x) {
+            return x < 0.5
+              ? 16 * x * x * x * x * x
+              : 1 - Math.pow(-2 * x + 2, 5) / 2;
+          };
+
+          var sectionTotal = sectionRef.current ? (sectionRef.current.offsetHeight - window.innerHeight) : 1;
+          var scrollPx = p * sectionTotal;
+
+          // === RAW scroll (no lerp) for both text AND card settle ===
+          var rawPx = scrollPRef.current * sectionTotal;
+
+          // Cards start BELOW text, settle UP to center — uses RAW scroll so cards don't overlap text when scrolling up
+          var cardStartY = 450;
+          var settleEnd = 400;
+          var settleP = Math.min(1, rawPx / settleEnd);
+          var easeOut = function (x) { return 1 - Math.pow(1 - x, 3); };
+          var cardSettleY = cardStartY * (1 - easeOut(settleP));
+
+          // === TEXT: uses RAW scroll (no lerp) so it's instant, no "flying in" ===
+          if (labelRef.current) {
+            labelRef.current.style.transform = 'translateY(' + (-rawPx) + 'px)';
+          }
+
+          // === ONE continuous animation from start to end ===
+          var ap = Math.min(1, scrollPx / sectionTotal);
+
+          // COLLECT phase: ap 0.55→0.70 unflip, ap 0.70→0.90 unfan
+          var unflipP = Math.max(0, Math.min(1, (ap - 0.55) / 0.15));
+          var unflipEase = smoothEase(unflipP);
+          var unfanP = Math.max(0, Math.min(1, (ap - 0.70) / 0.20));
+          var unfanEase = smoothEase(unfanP);
+
+          cardsRef.current.forEach(function (card, i) {
+            if (!card) return;
+
+            // CASCADE (ap 0→0.15)
+            var cascP = Math.max(0, Math.min(1, ap / 0.15));
+            var cascEase = easeOut(cascP);
+
+            // FAN (ap 0.10→0.22)
+            var fanDelay = 0.10 + i * 0.012;
+            var fanP = Math.max(0, Math.min(1, (ap - fanDelay) / 0.12));
+            var fanEase = smoothEase(fanP);
+
+            // FLIP (ap 0.25→0.40) — earlier, less scroll needed
+            var flipDelay = 0.25 + i * 0.02;
+            var flipP = Math.max(0, Math.min(1, (ap - flipDelay) / 0.15));
+            var flipEase = smoothEase(flipP);
+
+            // Apply COLLECT: reverse fan and flip
+            var effectiveFan = fanEase * (1 - unfanEase);
+            var effectiveCascade = cascEase * (1 - unfanEase);
+            var effectiveFlip = flipEase * (1 - unflipEase);
+
+            var rotY = 180 * (1 - effectiveFlip);
+
+            // Front/back handled by backface-visibility + 3D transform
+
+            // Fan target
+            var tx = (-1.5 + i) * spacing;
+
+            // Drift — diminishes during collect
+            var driftFactor = 1 - unfanEase;
+            var ph = i * 1.9;
+            var driftAmp = 80;
+            var driftX = (Math.sin(t * 0.4 + ph) * driftAmp * 0.3 + Math.sin(t * 0.25 + ph * 2.3) * (driftAmp * 0.15)) * driftFactor;
+            var driftY = (Math.cos(t * 0.35 + ph * 1.4) * driftAmp + Math.cos(t * 0.2 + ph * 0.8) * (driftAmp * 0.5)) * driftFactor;
+            var driftRot = Math.sin(t * 0.1 + ph * 0.6) * 1.5 * driftFactor;
+
+            var cascadeX = i * 15 * effectiveCascade;
+            var cascadeY = i * 10 * effectiveCascade;
+
+            // Blend: cascade → fan, reversed by collect
+            var x = cascadeX * (1 - effectiveFan) + tx * effectiveFan + driftX;
+            var y = cardSettleY + cascadeY * (1 - effectiveFan) + driftY;
+            if (y < 0) y = 0;
+            var rotZ = driftRot;
+
+            card.style.transform = 'perspective(1200px) translateX(' + x + 'px) translateY(' + y + 'px) rotateY(' + rotY + 'deg) rotate(' + rotZ + 'deg) scale(' + sc + ')';
+          });
+
+          animRef.current = requestAnimationFrame(animate);
+        };
+
+        animRef.current = requestAnimationFrame(animate);
+        onScroll();
+
+        return function () {
+          window.removeEventListener('scroll', onScroll);
+          if (animRef.current) cancelAnimationFrame(animRef.current);
+          observer.disconnect();
+        };
+      }, [isMob]);
+
+      var cardW = isMob ? 280 : 420, cardH = isMob ? 420 : 560;
+
+      return (
+        <section ref={sectionRef} id="services" style={{
+          height: isMob ? 'auto' : '530vh',
+          paddingBottom: isMob ? '80px' : '0',
+          position: 'relative', background: '#f0f1fa', zIndex: 1
+        }}>
+          <div style={{
+            position: isMob ? 'relative' : 'sticky', top: 0, height: isMob ? 'auto' : '100vh',
+            display: 'flex', flexDirection: isMob ? 'column' : 'row',
+            alignItems: isMob ? 'flex-start' : 'center', justifyContent: isMob ? 'flex-start' : 'center',
+            paddingTop: isMob ? '100px' : '0'
+          }}>
+            {/* Header */}
+            <div ref={labelRef} style={{
+              position: isMob ? 'relative' : 'absolute',
+              top: isMob ? '0' : '100px',
+              left: isMob ? '5vw' : '5%', right: isMob ? '5vw' : '5%',
+              width: isMob ? '90vw' : 'auto',
+              marginBottom: isMob ? '40px' : '0',
+              zIndex: 20,
+            }}>
+              <h2 style={{
+                fontSize: 'clamp(3.5rem, 10vw, 11rem)', fontWeight: 500,
+                lineHeight: 0.88, letterSpacing: '-0.02em', color: '#1a2ffb',
+                textTransform: 'uppercase', fontFamily: 'Archivo, sans-serif',
+              }}>
+                AREA OF<br />
+                <span style={{ position: 'relative', display: 'inline-block' }}>
+                  EXPERTISE
+                  {/* Right description */}
+                  <div style={{
+                    position: isMob ? 'relative' : 'absolute', top: isMob ? '16px' : '-0.65em',
+                    right: isMob ? 'auto' : '0', left: isMob ? 0 : 'auto',
+                    maxWidth: '458px', width: 'max-content',
+                    letterSpacing: 'normal', textTransform: 'none', lineHeight: 'normal',
+                    opacity: isMob ? 1 : undefined // Natively show on mobile
+                  }}>
+                    <p style={{
+                      fontSize: isMob ? '14px' : '20px', textTransform: 'uppercase', letterSpacing: '1.6px',
+                      lineHeight: isMob ? 1.4 : '27.2px', color: '#888888', fontWeight: 500, fontFamily: 'Onest, sans-serif',
+                      textAlign: 'left', margin: 0
+                    }}>
+                      Команда опытных специалистов с<br />
+                      широким спектром навыков<br />
+                      и компетенций
+                    </p>
+                  </div>
+                </span>
+              </h2>
+            </div>
+            {/* Cards */}
+            <div style={{
+              position: 'relative',
+              width: isMob ? '90vw' : cardW + 'px',
+              height: isMob ? 'auto' : cardH + 'px',
+              display: isMob ? 'flex' : 'block',
+              flexDirection: 'column',
+              gap: isMob ? '24px' : '0',
+              marginLeft: isMob ? '5vw' : '0',
+              marginTop: isMob ? '20px' : '0',
+              perspective: isMob ? '1200px' : 'none',
+            }}>
+              {services.map(function (s, i) {
+                return (
+                  <div key={i} ref={function (el) { cardsRef.current[i] = el; }} className={isMob ? 'mobile-card-flip' : undefined} style={{
+                    position: isMob ? 'relative' : 'absolute', top: 0, left: 0,
+                    width: '100%', height: isMob ? '420px' : cardH + 'px',
+                    borderRadius: '20px',
+                    zIndex: 10 + i,
+                    willChange: isMob ? 'auto' : 'transform',
+                    transformOrigin: 'center center',
+                    transformStyle: 'preserve-3d',
+                  }}>
+                    {/* Back — Stellated Void */}
+                    <div data-back="" style={{
+                      position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                      borderRadius: '20px',
+                      background: '#0a0a0a',
+                      border: '4px solid #1a2ffb',
+                      overflow: 'hidden',
+                      backfaceVisibility: 'hidden',
+                      transform: 'rotateY(180deg)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      {/* Grid pattern */}
+                      <div style={{
+                        position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                        backgroundImage: [
+                          'linear-gradient(0deg, rgba(26,47,251,0.07) 1px, transparent 1px)',
+                          'linear-gradient(90deg, rgba(26,47,251,0.07) 1px, transparent 1px)',
+                          'linear-gradient(45deg, rgba(26,47,251,0.035) 1px, transparent 1px)',
+                          'linear-gradient(-45deg, rgba(26,47,251,0.035) 1px, transparent 1px)'
+                        ].join(', '),
+                        backgroundSize: '40px 40px, 40px 40px, 56px 56px, 56px 56px',
+                      }} />
+                      {/* Cross glyph */}
+                      <svg viewBox="0 0 200 200" fill="none" style={{ width: '40%', height: '40%', opacity: 0.15 }}>
+                        <line x1="100" y1="10" x2="100" y2="190" stroke="#1a2ffb" strokeWidth="2" />
+                        <line x1="10" y1="100" x2="190" y2="100" stroke="#1a2ffb" strokeWidth="2" />
+                        <circle cx="100" cy="100" r="55" stroke="#1a2ffb" strokeWidth="1.5" />
+                        <circle cx="100" cy="100" r="28" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+                        <polygon points="100,25 118,78 175,100 118,122 100,175 82,122 25,100 82,78" stroke="#1a2ffb" strokeWidth="1" opacity="0.8" />
+                      </svg>
+                      {/* STUN text */}
+                      <div style={{
+                        position: 'absolute',
+                        fontFamily: 'Archivo, sans-serif',
+                        fontSize: isMob ? '42px' : '56px',
+                        fontWeight: 700,
+                        color: 'rgba(255,255,255,0.05)',
+                        letterSpacing: '0.2em',
+                      }}>STUN</div>
+                      {/* Corner accents */}
+                      <div style={{ position: 'absolute', top: '16px', left: '16px', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(26,47,251,0.5)' }} />
+                      <div style={{ position: 'absolute', top: '16px', right: '16px', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(26,47,251,0.5)' }} />
+                      <div style={{ position: 'absolute', bottom: '16px', left: '16px', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(26,47,251,0.5)' }} />
+                      <div style={{ position: 'absolute', bottom: '16px', right: '16px', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(26,47,251,0.5)' }} />
+                      {/* Service hint */}
+                      <div style={{
+                        position: 'absolute', bottom: '20px',
+                        fontFamily: 'IBM Plex Mono, monospace',
+                        fontSize: '10px',
+                        color: 'rgba(26,47,251,0.35)',
+                        letterSpacing: '0.2em',
+                        textTransform: 'uppercase',
+                      }}>{s.num} // {s.title}</div>
+                    </div>
+                    {/* Front — blue with content */}
+                    <div data-front="" style={{
+                      position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                      borderRadius: '20px',
+                      background: '#0a0a0a',
+                      border: '4px solid #1a2ffb',
+                      color: '#fff',
+                      padding: isMob ? '20px 24px' : '32px 40px',
+                      display: 'flex', flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      boxShadow: '0 25px 80px rgba(26,47,251,0.15), 0 8px 20px rgba(0,0,0,0.06)',
+                      backfaceVisibility: 'hidden',
+                    }}>
+                      {/* Top — title + letter */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <p style={{ fontSize: isMob ? '28px' : '42px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '-0.02em' }}>{s.title}</p>
+                        <div style={{ fontSize: isMob ? '52px' : '80px', fontWeight: 200, color: '#1a2ffb', lineHeight: 0.9 }}>{s.letter}</div>
+                      </div>
+                      {/* Items list */}
+                      <ul style={{ listStyleType: 'none', padding: 0, margin: 0 }}>
+                        {s.items.map(function (item, j) {
+                          return <li key={j} style={{ fontSize: isMob ? '18px' : '28px', color: 'rgba(255,255,255,0.5)', padding: isMob ? '8px 0' : '10px 0', borderBottom: j < s.items.length - 1 ? (isMob ? '3px' : '5px') + ' dotted rgba(255,255,255,0.25)' : 'none', fontWeight: 500 }}>{item}</li>;
+                        })}
+                      </ul>
+                      {/* Bottom — mirrored (rotated 180) */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', transform: 'rotate(180deg)' }}>
+                        <p style={{ fontSize: isMob ? '28px' : '42px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '-0.02em' }}>{s.title}</p>
+                        <div style={{ fontSize: isMob ? '52px' : '80px', fontWeight: 200, color: '#1a2ffb', lineHeight: 0.9 }}>{s.letter}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // ========== SCROLL REVEAL HOOK ==========
+    function useReveal() {
+      const ref = useRef(null);
+      useEffect(() => {
+        var el = ref.current; if (!el) return;
+        var obs = new IntersectionObserver((entries) => {
+          entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('active'); } });
+        }, { threshold: 0.15 });
+        el.querySelectorAll('.reveal').forEach(r => obs.observe(r));
+        return () => obs.disconnect();
+      }, []);
+      return ref;
+    }
+
+    // ========== APP ==========
+    // ========== SMOOTH SCROLL (LENIS) ==========
+    function useSmoothScroll() {
+      useEffect(() => {
+        if (typeof Lenis === 'undefined' || isMobile) return;
+        var lenis = new Lenis({
+          duration: 1.2,
+          easing: function (t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); },
+          smoothWheel: true,
+        });
+        var raf = function (time) {
+          lenis.raf(time);
+          requestAnimationFrame(raf);
+        };
+        requestAnimationFrame(raf);
+        return function () { lenis.destroy(); };
+      }, []);
+    }
+
+    // ========== PARALLAX HERO ==========
+    function useHeroParallax(textRef, rectRef, crosshairsRef, scrollLabelRef) {
+      useEffect(() => {
+        var pf = isMobile ? 0.1 : 0.35;
+        var onScroll = function () {
+          var scrollY = window.scrollY;
+          if (textRef.current) {
+            textRef.current.style.transform = 'translateY(' + (scrollY * pf) + 'px)';
+          }
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+        return function () { window.removeEventListener('scroll', onScroll); };
+      }, []);
+    }
+
+    function LoadingBar({ onLoaded }) {
+      var barRef = useRef(null);
+      var progress = useRef(0);
+
+      useEffect(() => {
+        var target = 33;
+        var steps = [
+          { at: 100, val: 45 },
+          { at: 500, val: 60 },
+          { at: 1000, val: 75 },
+          { at: 1500, val: 88 },
+          { at: 2000, val: 95 },
+          { at: 2500, val: 100 },
+        ];
+        var timers = steps.map(function (s) {
+          return setTimeout(function () { target = s.val; }, s.at);
+        });
+
+        var aid;
+        var tick = function () {
+          progress.current += (target - progress.current) * 0.08;
+          if (barRef.current) {
+            barRef.current.style.width = progress.current + '%';
+          }
+          if (progress.current > 99.5) {
+            setTimeout(onLoaded, 300);
+            return;
+          }
+          aid = requestAnimationFrame(tick);
+        };
+        aid = requestAnimationFrame(tick);
+
+        return function () {
+          timers.forEach(clearTimeout);
+          if (aid) cancelAnimationFrame(aid);
+        };
+      }, []);
+
+      return (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100000, background: '#0a0a0a',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <span style={{
+            fontFamily: 'Archivo, sans-serif', fontSize: 'clamp(36px, 5.5vw, 80px)', fontWeight: 700,
+            color: 'rgba(255,255,255,0.25)',
+            textTransform: 'uppercase', letterSpacing: '0.05em',
+            marginBottom: '20px',
+            width: '90%', textAlign: 'center',
+          }}>Подождите, мы стараемся...</span>
+          <div style={{
+            width: '90%', height: isMobile ? '24px' : '40px', background: 'rgba(255,255,255,0.15)',
+            overflow: 'hidden',
+          }}>
+            <div ref={barRef} style={{
+              width: '33%', height: '100%', background: '#fff',
+              transition: 'none',
+            }}></div>
+          </div>
+        </div>
+      );
+    }
+
+    // ========== GIF with CHROMA KEY + SCROLL ==========
+    function ScrollVideo() {
+      var canvasRef = useRef(null);
+      var sectionRef = useRef(null);
+      var framesRef = useRef([]);
+      var lastIdx = useRef(-1);
+
+      useEffect(function () {
+        var canvas = canvasRef.current;
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+        // Step 1: Load GIF, play it through, capture every frame with chroma key
+        var img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function () {
+          canvas.width = img.width;
+          canvas.height = img.height;
+
+          // Capture frames by drawing GIF at intervals as it animates
+          var frames = [];
+          var captureInterval = 50; // capture every 50ms
+          var maxFrames = 200;
+          var captureCount = 0;
+
+          var captureTimer = setInterval(function () {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            var d = imageData.data;
+            for (var i = 0; i < d.length; i += 4) {
+              var r = d[i], g = d[i + 1], b = d[i + 2];
+              if (g > 60 && g > r * 1.2 && g > b * 1.2) {
+                d[i + 3] = 0;
+              }
+            }
+            frames.push(imageData);
+            captureCount++;
+
+            if (captureCount >= maxFrames) {
+              clearInterval(captureTimer);
+              framesRef.current = frames;
+              console.log('Captured', frames.length, 'frames');
+              // Show first frame
+              ctx.putImageData(frames[0], 0, 0);
+            }
+          }, captureInterval);
+
+          // Stop capturing after GIF loops once (~12s)
+          setTimeout(function () {
+            clearInterval(captureTimer);
+            if (frames.length > 0 && framesRef.current.length === 0) {
+              framesRef.current = frames;
+              console.log('Captured', frames.length, 'frames (timeout)');
+              ctx.putImageData(frames[0], 0, 0);
+            }
+          }, 7000);
+        };
+        img.src = './cat.gif';
+
+        // Step 2: scroll-driven frame display
+        function tick() {
+          var f = framesRef.current;
+          if (f.length > 0) {
+            var section = sectionRef.current;
+            if (section) {
+              var rect = section.getBoundingClientRect();
+              var total = section.offsetHeight - window.innerHeight;
+              if (total > 0) {
+                var p = Math.max(0, Math.min(1, -rect.top / total));
+                var idx = Math.min(f.length - 1, Math.floor(p * f.length));
+                if (idx !== lastIdx.current) {
+                  lastIdx.current = idx;
+                  ctx.putImageData(f[idx], 0, 0);
+                }
+              }
+            }
+          }
+          requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      }, []);
+
+      return (
+        <section ref={sectionRef} id="contact" style={{ height: '500vh', position: 'relative', background: '#f0f1fa', zIndex: 1 }}>
+          <div style={{
+            position: 'sticky', top: 0, height: '100vh',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <canvas ref={canvasRef} style={{ maxWidth: '60%', maxHeight: '70vh' }} />
+          </div>
+        </section>
+      );
+    }
+
+    // ========== GEMINI CHATBOT ==========
+    var GEMINI_API_KEY = ''; // ← Вставь свой ключ сюда (ai.google.dev)
+    var STUN_SYSTEM_PROMPT = 'Ты — AI-консультант агентства STUN. Отвечай на русском языке. Ты помогаешь потенциальным клиентам узнать об услугах агентства, процессе работы, стоимости и сроках. Будь дружелюбным, профессиональным и лаконичным. Если не знаешь конкретных деталей — предложи связаться с командой напрямую. STUN — это digital-агентство, которое создаёт сайты, бренды, 3D-визуализации, AI-решения и цифровой опыт для современных компаний.';
+
+    function StunChat({ onToggle, externalOpen }) {
+      var [open, setOpen] = useState(false);
+      var [messages, setMessages] = useState([
+        { role: 'assistant', text: 'Привет! Я AI-ассистент STUN. Чем могу помочь?' }
+      ]);
+      var [input, setInput] = useState('');
+      var [loading, setLoading] = useState(false);
+      var messagesEndRef = useRef(null);
+      var inputRef = useRef(null);
+
+      useEffect(function () {
+        if (externalOpen && !open) {
+          setOpen(true);
+          if (onToggle) onToggle(true);
+        }
+      }, [externalOpen]);
+
+      useEffect(function () {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, [messages]);
+
+      useEffect(function () {
+        if (open && inputRef.current) {
+          setTimeout(function () { inputRef.current.focus(); }, 300);
+        }
+      }, [open]);
+
+      var sendMessage = function () {
+        var text = input.trim();
+        if (!text || loading) return;
+        setInput('');
+        var newMessages = messages.concat([{ role: 'user', text: text }]);
+        setMessages(newMessages);
+        setLoading(true);
+
+        if (!GEMINI_API_KEY) {
+          setTimeout(function () {
+            setMessages(newMessages.concat([{ role: 'assistant', text: 'API-ключ не настроен. Добавьте ключ Gemini в код сайта.' }]));
+            setLoading(false);
+          }, 500);
+          return;
+        }
+
+        var contents = [];
+        // Add system instruction as first user turn
+        contents.push({ role: 'user', parts: [{ text: STUN_SYSTEM_PROMPT }] });
+        contents.push({ role: 'model', parts: [{ text: 'Понял, я AI-консультант STUN. Готов помогать клиентам!' }] });
+        newMessages.forEach(function (m) {
+          contents.push({
+            role: m.role === 'user' ? 'user' : 'model',
+            parts: [{ text: m.text }]
+          });
+        });
+
+        fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_API_KEY, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: contents,
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 512,
+            }
+          })
+        })
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
+            var reply = 'Извините, произошла ошибка. Попробуйте позже.';
+            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+              reply = data.candidates[0].content.parts[0].text;
+            }
+            setMessages(newMessages.concat([{ role: 'assistant', text: reply }]));
+            setLoading(false);
+          })
+          .catch(function () {
+            setMessages(newMessages.concat([{ role: 'assistant', text: 'Ошибка соединения. Проверьте подключение к интернету.' }]));
+            setLoading(false);
+          });
+      };
+
+      var handleKey = function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      };
+
+      return (
+        <>
+          {/* Close button (only when chat is open) */}
+          {open && <button onClick={function () { setOpen(false); if (onToggle) onToggle(false); }} style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: window.innerWidth < 768 ? 'translate(calc(50vw - 36px), calc(-35vh))' : 'translate(220px, -350px)',
+            zIndex: 101,
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '50%',
+            width: '40px',
+            height: '40px',
+            color: '#fff',
+            cursor: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            transition: 'all 0.3s ease',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+          }} onMouseEnter={function (e) { e.currentTarget.style.background = 'rgba(26,47,251,0.5)' }} onMouseLeave={function (e) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <line x1="2" y1="2" x2="14" y2="14" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+              <line x1="14" y1="2" x2="2" y2="14" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </button>}
+
+          {/* Chat popup panel (Centered & Taller) */}
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            width: '440px',
+            maxWidth: 'calc(100vw - 32px)',
+            height: '70vh',
+            maxHeight: '800px',
+            zIndex: 99,
+
+            // Glassmorphism core styles
+            background: 'rgba(10, 15, 30, 0.45)', /* Dark blue-ish semi-transparent background */
+            backdropFilter: 'blur(20px)', /* Strong blur */
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.1)', /* Simulating glass edge reflection */
+            borderRadius: '24px',
+
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            opacity: open ? 1 : 0,
+            transform: open ? 'translate(-50%, -50%) scale(1)' : 'translate(-50%, -45%) scale(0.95)', /* Center transform */
+            pointerEvents: open ? 'auto' : 'none',
+            transition: 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+            // 3D pop effect shadow
+            boxShadow: '0 40px 80px rgba(0,0,0,0.8), inset 0 0 40px rgba(255,255,255,0.02)',
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: '24px 24px 20px',
+              borderBottom: '1px solid rgba(255,255,255,0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+            }}>
+              <div style={{
+                width: '10px', height: '10px', borderRadius: '50%',
+                background: '#1a2ffb',
+                boxShadow: '0 0 12px rgba(26,47,251,0.8), 0 0 4px rgba(255,255,255,0.8)', /* Glowing dot */
+                animation: 'pulse-dot 2s ease infinite',
+              }} />
+              <div>
+                <div style={{
+                  color: '#fff', fontSize: '16px', fontFamily: 'Archivo, sans-serif',
+                  fontWeight: 600, letterSpacing: '0.04em',
+                }}>STUN AI COMPANION</div>
+                <div style={{
+                  color: 'rgba(255,255,255,0.5)', fontSize: '11px',
+                  fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '0.15em',
+                  textTransform: 'uppercase', marginTop: '2px',
+                }}>System Online</div>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '20px 24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '18px',
+            }}>
+              {messages.map(function (m, i) {
+                var isUser = m.role === 'user';
+                return <div key={i} style={{
+                  alignSelf: isUser ? 'flex-end' : 'flex-start',
+                  maxWidth: '88%',
+                  padding: '14px 18px',
+                  borderRadius: isUser ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
+
+                  // User: outline minimalist style. AI: tinted glass bubble.
+                  background: isUser ? 'rgba(0,0,0,0.2)' : 'rgba(30, 50, 200, 0.15)',
+                  border: isUser ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(100, 150, 255, 0.2)',
+                  backdropFilter: isUser ? 'blur(4px)' : 'blur(10px)',
+                  WebkitBackdropFilter: isUser ? 'blur(4px)' : 'blur(10px)',
+
+                  color: isUser ? '#fff' : 'rgba(255,255,255,0.95)',
+                  fontSize: '14px',
+                  lineHeight: 1.5,
+                  fontFamily: 'Onest, sans-serif',
+                  fontWeight: 400,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  boxShadow: isUser ? 'none' : '0 10px 20px rgba(0,0,0,0.2)',
+                }}>{m.text}</div>;
+              })}
+              {loading && <div style={{
+                alignSelf: 'flex-start',
+                padding: '14px 18px',
+                borderRadius: '20px 20px 20px 4px',
+                background: 'rgba(30, 50, 200, 0.1)',
+                border: '1px solid rgba(100, 150, 255, 0.1)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                color: 'rgba(255,255,255,0.5)',
+                fontSize: '14px',
+                fontFamily: 'Onest, sans-serif',
+                display: 'flex',
+                gap: '6px',
+              }}>
+                <span style={{ animation: 'typing-dot 1.2s infinite 0s' }}>.</span>
+                <span style={{ animation: 'typing-dot 1.2s infinite 0.2s' }}>.</span>
+                <span style={{ animation: 'typing-dot 1.2s infinite 0.4s' }}>.</span>
+              </div>}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input */}
+            <div style={{
+              padding: '16px 20px',
+              borderTop: '1px solid rgba(255,255,255,0.05)',
+              display: 'flex',
+              gap: '12px',
+              alignItems: 'flex-end',
+              background: 'rgba(0,0,0,0.2)', /* Slightly darker input area background */
+            }}>
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={function (e) { setInput(e.target.value); }}
+                onKeyDown={handleKey}
+                placeholder="Задайте вопрос..."
+                style={{
+                  flex: 1,
+                  background: 'transparent',
+                  border: 'none',
+                  borderBottom: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '0',
+                  padding: '10px 4px',
+                  color: '#fff',
+                  fontSize: '15px',
+                  fontFamily: 'Onest, sans-serif',
+                  outline: 'none',
+                  transition: 'border-color 0.3s',
+                }}
+                onFocus={function (e) { e.target.style.borderBottom = '1px solid #1a2ffb'; }}
+                onBlur={function (e) { e.target.style.borderBottom = '1px solid rgba(255,255,255,0.2)'; }}
+              />
+              <button onClick={sendMessage} disabled={loading || !input.trim()} style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '50%',
+                border: 'none',
+                background: input.trim() && !loading ? '#1a2ffb' : 'rgba(255,255,255,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: input.trim() && !loading ? 'pointer' : 'default',
+                transition: 'background 0.3s, transform 0.2s, box-shadow 0.3s',
+                flexShrink: 0,
+                boxShadow: input.trim() && !loading ? '0 0 15px rgba(26,47,251,0.6)' : 'none',
+                transform: input.trim() && !loading ? 'scale(1.05)' : 'scale(1)',
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </>
+      );
+    }
+    // ========== 3D ROBOT SECTION ==========
+    function RobotSection() {
+      var bp = useBreakpoint();
+      var isMob = bp === 'mobile';
+      var [requestChat, setRequestChat] = useState(false);
+      var [isOverlayVisible, setIsOverlayVisible] = useState(false);
+      var [isHoveringHeadUI, setIsHoveringHeadUI] = useState(false);
+      var containerRef = useRef(null);
+      var canvasRef = useRef(null);
+      var modelRef = useRef(null);
+      var sectionRef = useRef(null);
+      var shadowRef = useRef(null);
+      var phaseRef = useRef('waiting'); // waiting | falling | bouncing | idle
+      var chatOpenRef = useRef(false);
+
+      useEffect(function () {
+        var container = containerRef.current;
+        var canvas = canvasRef.current;
+        var section = sectionRef.current;
+        if (!container || !canvas) return;
+
+        var w = container.clientWidth, h = container.clientHeight;
+        var scene = new THREE.Scene();
+
+        var camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 1000);
+        var mob = window.innerWidth < 768;
+        camera.position.set(0, 2.2, 5.5);
+        camera.lookAt(0, 1.7, 0);
+
+        var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+        renderer.setSize(w, h);
+        renderer.setPixelRatio(isMob ? 1 : Math.min(window.devicePixelRatio, 1.5));
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.4;
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        var keyLight = new THREE.DirectionalLight(0xffffff, 1.8);
+        keyLight.position.set(4, 6, 3);
+        scene.add(keyLight);
+        var fillLight = new THREE.DirectionalLight(0xddeeff, 0.4);
+        fillLight.position.set(-4, 3, -1);
+        scene.add(fillLight);
+        var rimLight = new THREE.DirectionalLight(0x1a2ffb, 2.5);
+        rimLight.position.set(0, 4, -6);
+        scene.add(rimLight);
+
+        var pmremGen = new THREE.PMREMGenerator(renderer);
+        var envS = new THREE.Scene();
+        envS.background = new THREE.Color(0xffffff);
+        var eL = new THREE.PointLight(0xffffff, 3, 100);
+        eL.position.set(5, 10, 5);
+        envS.add(eL);
+        scene.environment = pmremGen.fromScene(envS).texture;
+        pmremGen.dispose();
+
+        var loader = new THREE.GLTFLoader();
+        var dracoLoader = new THREE.DRACOLoader();
+        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
+        loader.setDRACOLoader(dracoLoader);
+
+        var clock = new THREE.Clock();
+        var mixer = null;
+        var origScale = 1, baseY = 0, centerX = 0, centerZ = 0;
+
+        // Physics
+        var posY = 0, velY = 0;
+        var gravity = 18;
+        var bounceVel = 7; // gives ~1.36 units peak bounce height
+        var bounced = false;
+
+        var onModelLoaded = function (gltf) {
+          console.log('[ROBOT] Model loaded');
+          var model = gltf.scene;
+          var box = new THREE.Box3().setFromObject(model);
+          var center = box.getCenter(new THREE.Vector3());
+          var size = box.getSize(new THREE.Vector3());
+          var maxDim = Math.max(size.x, size.y, size.z);
+          var sc = 2.2 / maxDim;
+          model.scale.setScalar(sc);
+          origScale = sc;
+          baseY = -box.min.y * sc;
+          centerX = -center.x * sc;
+          centerZ = -center.z * sc;
+          // Start high above
+          posY = baseY + 8;
+          velY = 0;
+          model.position.set(centerX, posY, centerZ);
+          model.visible = false;
+          model.traverse(function (child) {
+            if (child.isMesh && child.material) {
+              var mats = Array.isArray(child.material) ? child.material : [child.material];
+              mats.forEach(function (mat) {
+                mat.color = new THREE.Color(0x0a0a0a);
+                mat.metalness = 0.6;
+                mat.roughness = 0.25;
+              });
+            }
+          });
+          scene.add(model);
+          modelRef.current = model;
+          if (gltf.animations && gltf.animations.length > 0) {
+            mixer = new THREE.AnimationMixer(model);
+            gltf.animations.forEach(function (clip) { mixer.clipAction(clip).play(); });
+          }
+          // Restart render loop if paused waiting for model
+          if (robotVisible && !aid) { try { tick(); } catch (e) { } }
+        };
+
+        // Lazy load: only start when section is near viewport
+        var modelLoading = false;
+        var startModelLoad = function () {
+          if (modelLoading) return;
+          modelLoading = true;
+          console.log('[ROBOT] Starting model load...');
+          loader.load('model.glb', onModelLoaded,
+            function (p) { if (p.total) console.log('[ROBOT] Loading:', Math.round(p.loaded / p.total * 100) + '%'); },
+            function (e) { console.error('[ROBOT] Load failed', e); }
+          );
+        };
+        var preloadObs = new IntersectionObserver(function (entries) {
+          if (entries[0].isIntersecting) {
+            startModelLoad();
+            preloadObs.disconnect();
+          }
+        }, { rootMargin: '0px 0px 600px 0px' });
+        if (section) preloadObs.observe(section);
+
+        // Ground shadow (canvas-generated radial gradient)
+        var shCanvas = document.createElement('canvas');
+        shCanvas.width = 128; shCanvas.height = 128;
+        var shCtx = shCanvas.getContext('2d');
+        var shGrad = shCtx.createRadialGradient(64, 64, 0, 64, 64, 64);
+        shGrad.addColorStop(0, 'rgba(0,0,0,0.25)');
+        shGrad.addColorStop(0.5, 'rgba(0,0,0,0.1)');
+        shGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        shCtx.fillStyle = shGrad;
+        shCtx.fillRect(0, 0, 128, 128);
+        var shadowTex = new THREE.CanvasTexture(shCanvas);
+        var shadowMesh = new THREE.Mesh(
+          new THREE.PlaneGeometry(3.5, 3.5),
+          new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false })
+        );
+        shadowMesh.rotation.x = -Math.PI / 2;
+        shadowMesh.position.set(0, 0.01, 0);
+        shadowMesh.visible = false;
+        scene.add(shadowMesh);
+
+        // Listeners for React state sync
+        var onScanInitiated = function () {
+          setRequestChat(true);
+        };
+        var onScanEnded = function () {
+          isScanning = false;
+        };
+        window.addEventListener('robotScanInitiated', onScanInitiated);
+        window.addEventListener('robotScanEnded', onScanEnded);
+
+        // Raycasting for "Retina Scan" interaction
+        var raycaster = new THREE.Raycaster();
+        var mouseVec = new THREE.Vector2();
+        var isHoveringHead = false;
+        var isScanning = false;
+        var cameraZoomP = 0; // 0 = idle, 1 = zoomed in
+        var defaultCamPos = new THREE.Vector3(0, 2.2, 5.5);
+        var targetCamPos = new THREE.Vector3(0, 1.6, 2.5); // Adjusted to avoid pixelation
+        var defaultLookAt = new THREE.Vector3(0, 1.7, 0);
+        var targetLookAt = new THREE.Vector3(0, 1.6, 0); // Look exactly at head
+
+        // Rings for visual effect
+        var rings = [];
+        for (let i = 0; i < 3; i++) {
+          let geo = new THREE.RingGeometry(0.8 + i * 0.2, 0.82 + i * 0.2, 64);
+          let mat = new THREE.MeshBasicMaterial({ color: 0x1a2ffb, transparent: true, opacity: 0, side: THREE.DoubleSide });
+          let ring = new THREE.Mesh(geo, mat);
+          ring.rotation.x = Math.PI / 2;
+          scene.add(ring);
+          rings.push({ mesh: ring, baseSpeed: 0.5 + i * 0.5, speedMult: 1, baseOp: 0.3 - i * 0.1 });
+        }
+
+        // Mouse tracking
+        var mx = 0.5, my = 0.5, curRY = 0, curTX = 0;
+        var rawMx = 0, rawMy = 0; // For raycaster (-1 to 1)
+
+        var onMove = function (e) {
+          if (isScanning) return; // Lock mouse during scan
+          var rect = section.getBoundingClientRect();
+          mx = (e.clientX - rect.left) / rect.width;
+          my = (e.clientY - rect.top) / rect.height;
+          rawMx = (mx * 2) - 1;
+          rawMy = -(my * 2) + 1;
+
+          if (modelRef.current && phaseRef.current === 'idle') {
+            mouseVec.set(rawMx, rawMy);
+            raycaster.setFromCamera(mouseVec, camera);
+            var intersects = raycaster.intersectObject(modelRef.current, true);
+
+            var hitHead = false;
+            if (intersects.length > 0) {
+              // Determine if we hit the upper part of the body (head area)
+              var point = intersects[0].point;
+              // The robot is ~2.2 units tall (from Y=0 to Y=2.2)
+              // Head sits roughly above Y=1.2
+              if (point.y > 1.2) {
+                hitHead = true;
+              }
+            }
+
+            if (hitHead && !isHoveringHead) {
+              isHoveringHead = true;
+              setIsHoveringHeadUI(true);
+              document.body.classList.add('hovering-head'); // trigger custom cursor change
+              // Activate rings
+              rings.forEach(r => { r.mesh.position.set(centerX, 1.8, centerZ); });
+            } else if (!hitHead && isHoveringHead) {
+              isHoveringHead = false;
+              setIsHoveringHeadUI(false);
+              document.body.classList.remove('hovering-head');
+            }
+          }
+        };
+        section.addEventListener('mousemove', onMove);
+        var onTouch = function (e) {
+          if (isScanning) return;
+          if (e.touches.length > 0) {
+            var rect = section.getBoundingClientRect();
+            mx = (e.touches[0].clientX - rect.left) / rect.width;
+            my = (e.touches[0].clientY - rect.top) / rect.height;
+            rawMx = (mx * 2) - 1;
+            rawMy = -(my * 2) + 1;
+
+            // Simplified touch raycast
+            if (modelRef.current && phaseRef.current === 'idle') {
+              mouseVec.set(rawMx, rawMy);
+              raycaster.setFromCamera(mouseVec, camera);
+              var intersects = raycaster.intersectObject(modelRef.current, true);
+              if (intersects.length > 0 && intersects[0].point.y > 1.2) {
+                if (!isHoveringHead) {
+                  isHoveringHead = true;
+                  setIsHoveringHeadUI(true);
+                }
+                rings.forEach(r => { r.mesh.position.set(centerX, 1.8, centerZ); });
+              } else {
+                if (isHoveringHead) {
+                  isHoveringHead = false;
+                  setIsHoveringHeadUI(false);
+                }
+              }
+            }
+          }
+        };
+        section.addEventListener('touchmove', onTouch, { passive: true });
+
+        var onClick = function (e) {
+          if (isHoveringHead && phaseRef.current === 'idle' && !isScanning) {
+            isScanning = true;
+            // Trigger effect
+            document.body.classList.remove('hovering-head');
+
+            // Dispatch event so React component can show UI
+            var event = new CustomEvent('robotScanInitiated');
+            window.dispatchEvent(event);
+          }
+        };
+        section.addEventListener('click', onClick);
+
+        // Pause when off-screen, trigger fall when visible + model ready
+        var robotVisible = false;
+        var observer = new IntersectionObserver(function (entries) {
+          robotVisible = entries[0].isIntersecting;
+          if (robotVisible) {
+            setIsOverlayVisible(true);
+            if (!aid) tick();
+          }
+        }, { threshold: 0.2 });
+        if (section) observer.observe(section);
+
+        var aid;
+        var tick = function () {
+          // Pause render when off-screen and idle or waiting
+          if (!robotVisible && (phaseRef.current === 'idle' || phaseRef.current === 'waiting')) { aid = null; return; }
+          var dt = clock.getDelta();
+          if (dt > 0.1) dt = 0.016;
+          var t = clock.getElapsedTime();
+          if (mixer) mixer.update(dt);
+
+          var model = modelRef.current;
+          var phase = phaseRef.current;
+
+          if (phase === 'waiting') {
+            if (model) {
+              model.visible = false;
+              // Model loaded + section visible → start falling
+              if (robotVisible) {
+                phaseRef.current = 'falling';
+                posY = baseY + 8;
+                velY = 0;
+                bounced = false;
+              }
+            }
+          } else if (phase === 'falling' || phase === 'bouncing') {
+            if (model) {
+              model.visible = true;
+              velY -= gravity * dt;
+              posY += velY * dt;
+
+              if (posY <= baseY) {
+                posY = baseY;
+                if (!bounced) {
+                  velY = bounceVel;
+                  bounced = true;
+                  phaseRef.current = 'bouncing';
+                } else {
+                  velY = 0;
+                  phaseRef.current = 'idle';
+                  console.log('[ROBOT] Landed, entering idle');
+                }
+              }
+
+              model.position.set(centerX, posY, centerZ);
+              model.scale.setScalar(origScale);
+
+              // Shadow tracks robot, scales with height
+              shadowMesh.visible = true;
+              var heightRatio = Math.max(0, 1 - (posY - baseY) / 8);
+              shadowMesh.position.set(centerX, 0.01, centerZ + 0.5);
+              shadowMesh.scale.set(0.6 + heightRatio * 0.4, 0.6 + heightRatio * 0.4, 1);
+              shadowMesh.material.opacity = heightRatio * 0.8;
+            }
+          } else if (phase === 'idle') {
+            if (model) {
+              model.visible = true;
+              model.position.set(centerX, baseY + Math.sin(t * 0.8) * 0.015, centerZ);
+              var tRY, tTX;
+              if (chatOpenRef.current && mx > 0.5) {
+                // Chat open + cursor on right half → follow cursor
+                tRY = (mx - 0.5) * 1.2;
+                tTX = (my - 0.5) * 0.5;
+              } else if (chatOpenRef.current) {
+                // Chat open + cursor on left half → look toward chat
+                tRY = 0.5;
+                tTX = 0.15;
+              } else {
+                // Normal → follow cursor everywhere
+                tRY = (mx - 0.5) * 1.2;
+                tTX = (my - 0.5) * 0.5;
+              }
+              curRY += (tRY - curRY) * 0.06;
+              curTX += (tTX - curTX) * 0.06;
+              model.rotation.set(curTX, curRY, 0);
+              model.scale.setScalar(origScale);
+
+              // Shadow follows with slight cursor offset
+              shadowMesh.visible = true;
+              shadowMesh.position.set(centerX + curRY * 0.3, 0.01, centerZ + 0.5 + curTX * 0.2);
+              shadowMesh.scale.set(1, 1, 1);
+              shadowMesh.material.opacity = 0.8;
+              // If scanning, override lookAt and position
+              if (isScanning) {
+                cameraZoomP += (1 - cameraZoomP) * 0.05; // ease towards 1
+
+                // Spin rings faster and expand
+                rings.forEach(r => {
+                  r.speedMult += (10 - r.speedMult) * 0.05;
+                  r.mesh.rotation.z += r.baseSpeed * r.speedMult * dt;
+                  r.mesh.scale.setScalar(1 + cameraZoomP * 5);
+                  r.mesh.material.opacity = r.baseOp * (1 - cameraZoomP);
+                });
+              } else {
+                cameraZoomP += (0 - cameraZoomP) * 0.08; // ease back to 0 if chat closed
+
+                // Animate rings on hover
+                rings.forEach(r => {
+                  r.speedMult += (1 - r.speedMult) * 0.1;
+                  r.mesh.rotation.z += r.baseSpeed * r.speedMult * dt;
+                  let targetOp = isHoveringHead ? r.baseOp : 0;
+                  r.mesh.material.opacity += (targetOp - r.mesh.material.opacity) * 0.1;
+                  r.mesh.scale.setScalar(1 + Math.sin(t * 2 + r.baseSpeed) * 0.05);
+                });
+              }
+
+              // Apply camera transform based on zoom progress
+              var currentPos = new THREE.Vector3().lerpVectors(defaultCamPos, targetCamPos, cameraZoomP);
+              camera.position.copy(currentPos);
+
+              var currentLook = new THREE.Vector3().lerpVectors(defaultLookAt, targetLookAt, cameraZoomP);
+              camera.lookAt(currentLook);
+
+              // Blur background elements using a CSS filter on the container based on zoom
+              if (isScanning && containerRef.current) {
+                containerRef.current.style.filter = `blur(${cameraZoomP * 10}px)`;
+              } else if (!isScanning && containerRef.current) {
+                containerRef.current.style.filter = `blur(${cameraZoomP * 10}px)`;
+                if (cameraZoomP < 0.01) containerRef.current.style.filter = 'none';
+              }
+            }
+
+          }
+
+          renderer.render(scene, camera);
+          aid = requestAnimationFrame(tick);
+        };
+        tick();
+
+        var onResize = function () {
+          w = container.clientWidth; h = container.clientHeight;
+          camera.position.set(0, 2.2, 5.5);
+          camera.lookAt(0, 1.7, 0);
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+          renderer.setSize(w, h);
+        };
+        window.addEventListener('resize', onResize);
+
+        return function () {
+          cancelAnimationFrame(aid);
+          if (observer) observer.disconnect();
+          preloadObs.disconnect();
+          section.removeEventListener('mousemove', onMove);
+          section.removeEventListener('touchmove', onTouch);
+          section.removeEventListener('click', onClick);
+          window.removeEventListener('resize', onResize);
+          window.removeEventListener('robotScanInitiated', onScanInitiated);
+          window.removeEventListener('robotScanEnded', onScanEnded);
+          if (mixer) mixer.stopAllAction();
+          scene.traverse(function (o) {
+            if (o.geometry) o.geometry.dispose();
+            if (o.material) {
+              if (Array.isArray(o.material)) o.material.forEach(function (m) { m.dispose(); });
+              else o.material.dispose();
+            }
+          });
+          renderer.dispose();
+          dracoLoader.dispose();
+        };
+      }, []);
+
+      return (
+        <section id="robot" ref={sectionRef} style={{
+          position: 'relative',
+          background: '#0a0a0a',
+          overflow: 'hidden',
+          height: '100vh',
+          marginTop: '-1px', // Fix for subpixel rendering gap between sections
+          paddingTop: '1px',
+        }}>
+          {/* 3D Canvas OR Video placeholder */}
+          <div ref={containerRef} data-scene-rect style={{
+            width: '100%', height: '100%',
+            position: 'absolute', top: 0, left: 0, zIndex: 2,
+          }}>
+            <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%' }} />
+          </div>
+          {/* Floor glow */}
+          <div style={{
+            position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+            width: '80%', height: '40%',
+            background: 'radial-gradient(ellipse at center bottom, rgba(26,47,251,0.08) 0%, rgba(26,47,251,0.03) 40%, transparent 70%)',
+            pointerEvents: 'none', zIndex: 1,
+          }} />
+
+          {/* Massive Kinetic Text - Row 1 (Left to Right) */}
+          {!isMob && (
+            <div style={{
+              position: 'absolute', top: '40%', left: '0', right: '0',
+              transform: 'translateY(-50%)',
+              zIndex: 1, pointerEvents: 'none',
+              opacity: requestChat ? 0 : (isOverlayVisible ? 1 : 0),
+              transition: 'opacity 1.2s ease',
+              width: '100vw', overflow: 'hidden',
+            }}>
+              <div style={{
+                display: 'flex', whiteSpace: 'nowrap',
+                fontFamily: 'Archivo, sans-serif', fontSize: 'clamp(5rem, 15vw, 25rem)', fontWeight: 800,
+                lineHeight: 0.9, userSelect: 'none',
+                animation: 'marquee-reverse 45s linear infinite',
+                animationPlayState: requestChat ? 'paused' : 'running',
+                animationDuration: isHoveringHeadUI ? '20s' : '45s',
+                color: isHoveringHeadUI ? 'rgba(26, 47, 251, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                textShadow: isHoveringHeadUI ? '0 0 40px rgba(26, 47, 251, 0.3)' : '0 0 20px rgba(255,255,255,0.02)',
+                WebkitTextStroke: isMob ? '1px rgba(255,255,255,0.05)' : '2px rgba(255,255,255,0.05)',
+                transition: 'color 0.8s ease, text-shadow 0.8s ease',
+              }}>
+                <span style={{ paddingRight: '50px' }}>
+                  [SYS.REQ] TARGET ACQUIRED // CLICK ON THE HEAD FOR AI CHAT...
+                </span>
+                <span style={{ paddingRight: '50px' }}>
+                  [SYS.REQ] TARGET ACQUIRED // CLICK ON THE HEAD FOR AI CHAT...
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Massive Kinetic Text - Row 2 (Right to Left) */}
+          {!isMob && (
+            <div style={{
+              position: 'absolute', top: '60%', left: '0', right: '0',
+              transform: 'translateY(-50%)',
+              zIndex: 1, pointerEvents: 'none',
+              opacity: requestChat ? 0 : (isOverlayVisible ? 1 : 0),
+              transition: 'opacity 1.2s ease',
+              width: '100vw', overflow: 'hidden',
+            }}>
+              <div style={{
+                display: 'flex', whiteSpace: 'nowrap',
+                fontFamily: 'Archivo, sans-serif', fontSize: 'clamp(5rem, 15vw, 25rem)', fontWeight: 800,
+                lineHeight: 0.9, userSelect: 'none',
+                animation: 'marquee 40s linear infinite',
+                animationPlayState: requestChat ? 'paused' : 'running',
+                animationDuration: isHoveringHeadUI ? '20s' : '40s',
+                color: isHoveringHeadUI ? 'rgba(26, 47, 251, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                textShadow: isHoveringHeadUI ? '0 0 40px rgba(26, 47, 251, 0.3)' : '0 0 20px rgba(255,255,255,0.02)',
+                WebkitTextStroke: isMob ? '1px rgba(255,255,255,0.05)' : '2px rgba(255,255,255,0.05)',
+                transition: 'color 0.8s ease, text-shadow 0.8s ease',
+              }}>
+                <span style={{ paddingRight: '50px' }}>
+                  ACTION: &gt;&gt; CLICK HEAD TO CHAT &lt;&lt; // STANDBY MODE //
+                </span>
+                <span style={{ paddingRight: '50px' }}>
+                  ACTION: &gt;&gt; CLICK HEAD TO CHAT &lt;&lt; // STANDBY MODE //
+                </span>
+              </div>
+            </div>
+          )}
+
+          <StunChat
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              height: '80%', // Increased height
+            }}
+            onToggle={function (isOpen) {
+              chatOpenRef.current = isOpen;
+              if (!isOpen) {
+                setRequestChat(false);
+                // Tell 3D scene to un-scan (we use DOM styling logic in the hook, but we need to reset the flag)
+                // We can do this cleanly by listening to the inverse event or letting react state drive if possible
+                // For now, we'll dispatch an event back
+                window.dispatchEvent(new CustomEvent('robotScanEnded'));
+              }
+            }}
+            externalOpen={requestChat}
+          />
+
+          {/* HUD Corner Brackets */}
+          {
+            [
+              { top: '24px', left: '24px', borderTop: '1px solid rgba(26,47,251,0.3)', borderLeft: '1px solid rgba(26,47,251,0.3)' },
+              { top: '24px', right: '24px', borderTop: '1px solid rgba(26,47,251,0.3)', borderRight: '1px solid rgba(26,47,251,0.3)' },
+              { bottom: '24px', left: '24px', borderBottom: '1px solid rgba(26,47,251,0.3)', borderLeft: '1px solid rgba(26,47,251,0.3)' },
+              { bottom: '24px', right: '24px', borderBottom: '1px solid rgba(26,47,251,0.3)', borderRight: '1px solid rgba(26,47,251,0.3)' },
+            ].map(function (s, i) {
+              return React.createElement('div', {
+                key: 'hud-corner-' + i, style: Object.assign({}, s, {
+                  position: 'absolute',
+                  width: isMob ? '24px' : '40px',
+                  height: isMob ? '24px' : '40px',
+                  pointerEvents: 'none',
+                  zIndex: 5,
+                })
+              });
+            })
+          }
+
+          {/* Mobile AI Chat Button */}
+          {isMob && (
+            <div style={{
+              position: 'absolute', bottom: '110px', left: '5%', right: '5%',
+              zIndex: 30,
+              opacity: requestChat ? 0 : (isOverlayVisible ? 1 : 0),
+              transition: 'opacity 0.6s ease',
+              pointerEvents: requestChat || !isOverlayVisible ? 'none' : 'auto',
+            }}>
+              <button onClick={function () { setRequestChat(true); }} style={{
+                width: '100%',
+                background: 'rgba(26,47,251,0.1)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                border: '1px solid rgba(26,47,251,0.5)',
+                color: '#fff',
+                height: '60px',
+                borderRadius: '16px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+                fontFamily: 'Archivo, sans-serif', fontWeight: 600,
+                fontSize: '18px', textTransform: 'uppercase', letterSpacing: '0.05em',
+                boxShadow: '0 0 20px rgba(26,47,251,0.2)',
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                </svg>
+                Открыть AI-чат
+              </button>
+            </div>
+          )}
+
+          {/* Telegram Button */}
+          <div style={{
+            position: 'absolute', bottom: '40px', right: '5%',
+            zIndex: 10,
+            opacity: requestChat ? 0 : (isOverlayVisible ? 1 : 0),
+            transition: 'opacity 0.6s ease',
+            pointerEvents: requestChat || !isOverlayVisible ? 'none' : 'auto',
+          }}>
+            <MagneticWrap strength={0.4}>
+              <a href="https://t.me/stun_agency" target="_blank" rel="noopener noreferrer" style={{
+                background: '#1a2ffb',
+                color: '#fff',
+                height: '56px',
+                borderRadius: '100px',
+                padding: '0 32px',
+                display: 'flex', alignItems: 'center', gap: '12px',
+                textDecoration: 'none',
+                fontFamily: 'Archivo, sans-serif', fontWeight: 600,
+                fontSize: '16px', textTransform: 'uppercase', letterSpacing: '0.05em',
+                boxShadow: '0 0 30px rgba(26,47,251,0.4)',
+                cursor: 'none',
+                transition: 'background 0.3s, transform 0.3s, box-shadow 0.3s',
+              }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = '0 0 40px rgba(26,47,251,0.8)';
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = '0 0 30px rgba(26,47,251,0.4)';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>Telegram</span>
+              </a>
+            </MagneticWrap>
+          </div>
+
+          {/* HUD Scanning Line */}
+          {
+            !isMob && React.createElement('div', {
+              style: {
+                position: 'absolute',
+                left: 0,
+                width: '100%',
+                height: '1px',
+                background: 'rgba(26,47,251,0.06)',
+                boxShadow: '0 0 2px rgba(26,47,251,0.1)',
+                pointerEvents: 'none',
+                zIndex: 5,
+                animation: 'hudScanLine 8s linear infinite',
+              }
+            })
+          }
+
+        </section >
+      );
+    }
+
+
+
+    function App() {
+      var bp = useBreakpoint();
+      var isMob = bp === 'mobile';
+      const [phase, setPhase] = useState('loading'); // 'loading' → 'splash' → 'ready'
+      const [initialSound, setInitialSound] = useState(false);
+      const revealRef = useReveal();
+      const heroTextRef = useRef(null);
+      const heroRectRef = useRef(null);
+      const heroCrosshairsRef = useRef(null);
+      const heroScrollRef = useRef(null);
+      useSmoothScroll();
+      useHeroParallax(heroTextRef, heroRectRef, heroCrosshairsRef, heroScrollRef);
+
+      var handleEnter = function (withSound) {
+        setInitialSound(withSound);
+        setPhase('ready');
+      };
+
+      return (
+        <div ref={revealRef}>
+          {phase === 'loading' && <LoadingBar onLoaded={function () { setPhase('splash'); }} />}
+          {phase === 'splash' && <SplashScreen onEnter={handleEnter} />}
+          <CustomCursor />
+          <Navigation initialSound={initialSound} />
+
+          {/* HERO */}
+          <section className="min-h-screen flex flex-col justify-end items-center bg-[#f0f1fa] relative pb-16">
+            {/* Text grid — Lusion-style 12-column layout */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMob ? '1fr' : 'repeat(12, minmax(0, 1fr))',
+              columnGap: isMob ? '0' : '40px',
+              width: '100%',
+              paddingLeft: '5%', paddingRight: '5%',
+              paddingTop: isMob ? '80px' : '38px',
+              paddingBottom: '30px',
+              position: 'absolute',
+              top: 0, left: 0, right: 0,
+              zIndex: 3,
+            }}>
+              <h1 style={{
+                fontSize: isMob ? 'clamp(20px, 5.5vw, 30px)' : 'clamp(32px, 3.2vw, 48px)',
+                gridColumnStart: isMob ? 1 : 4,
+                gridColumnEnd: isMob ? -1 : 'span 6',
+                fontFamily: 'Archivo, sans-serif',
+                fontWeight: 400,
+                lineHeight: 1.25,
+                color: '#0a0a12',
+                margin: 0,
+                height: 'fit-content',
+              }}>Мы помогаем брендам создавать<br />цифровой опыт, который<br />запоминается навсегда</h1>
+            </div>
+
+            {/* 3D Rectangle */}
+            <div style={{ position: 'relative', width: isMob ? '96%' : '90%', height: isMob ? '62vh' : '69vh' }}>
+              <div ref={heroRectRef} style={{ width: '100%', height: '100%', borderRadius: '20px', overflow: 'hidden', position: 'relative', zIndex: 2, willChange: 'transform' }}>
+                <StellatedScene />
+              </div>
+            </div>
+
+            {/* 4 crosshairs + Scroll centered */}
+            <div ref={heroCrosshairsRef} style={{
+              position: 'absolute', bottom: '18px', left: '5%', right: '5%',
+              display: 'flex', justifyContent: isMob ? 'center' : 'space-between', alignItems: 'center',
+              pointerEvents: 'none',
+            }}>
+              {!isMob && <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><line x1="10" y1="0" x2="10" y2="20" stroke="#0a0a12" strokeWidth="1.5" /><line x1="0" y1="10" x2="20" y2="10" stroke="#0a0a12" strokeWidth="1.5" /></svg>}
+              {!isMob && <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><line x1="10" y1="0" x2="10" y2="20" stroke="#0a0a12" strokeWidth="1.5" /><line x1="0" y1="10" x2="20" y2="10" stroke="#0a0a12" strokeWidth="1.5" /></svg>}
+              <span ref={heroScrollRef} style={{
+                fontSize: '16px', fontWeight: 550,
+                textTransform: 'uppercase',
+                fontFamily: 'Archivo, sans-serif',
+                letterSpacing: '0.05em',
+                color: '#0a0a12',
+                display: 'inline-block',
+                transform: 'scaleY(1.15)',
+                transformOrigin: 'bottom center',
+              }}>Scroll to explore</span>
+              {!isMob && <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><line x1="10" y1="0" x2="10" y2="20" stroke="#0a0a12" strokeWidth="1.5" /><line x1="0" y1="10" x2="20" y2="10" stroke="#0a0a12" strokeWidth="1.5" /></svg>}
+              {!isMob && <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><line x1="10" y1="0" x2="10" y2="20" stroke="#0a0a12" strokeWidth="1.5" /><line x1="0" y1="10" x2="20" y2="10" stroke="#0a0a12" strokeWidth="1.5" /></svg>}
+            </div>
+          </section>
+
+          {/* SERVICES */}
+          <CardServices />
+          <AboutSection />
+
+
+
+          {/* ROBOT — last section */}
+          <RobotSection />
+
+          {/* CONTACT — временно убрано */}
+
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+
+</html>
