@@ -13,7 +13,6 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/DRACOLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.24.0/babel.min.js"></script>
   <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
-  <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"></script>
   <script>window.onerror = function (m, s, l, c, e) { document.body.innerHTML = '<pre style="color:red;padding:40px;font-size:14px">' + m + '\n\nLine: ' + l + '\n' + (e && e.stack || '') + '</pre>'; }</script>
   <script>
     window.__geoCache = null;
@@ -2548,9 +2547,24 @@
       );
     }
 
+    /* Prefetch spline scene when user is near the section */
+    var splinePrefetched = false;
+    function prefetchSpline(url) {
+      if (splinePrefetched) return;
+      splinePrefetched = true;
+      var link = document.createElement('link');
+      link.rel = 'prefetch';
+      link.href = url;
+      link.as = 'fetch';
+      link.crossOrigin = 'anonymous';
+      document.head.appendChild(link);
+    }
+
     function SplineScene(props) {
       var sceneUrl = props.scene;
+      var isVisible = props.isVisible;
       var containerRef = useRef(null);
+      var viewerRef = useRef(null);
       var [loaded, setLoaded] = useState(false);
 
       useEffect(function () {
@@ -2560,8 +2574,9 @@
         viewer.style.width = '100%';
         viewer.style.height = '100%';
         viewer.style.display = 'block';
+        viewerRef.current = viewer;
 
-        // Hide "Built with Spline" watermark after load
+        // Hide watermark after load
         var hideWatermark = function () {
           setLoaded(true);
           try {
@@ -2569,7 +2584,6 @@
             if (shadow) {
               var logo = shadow.querySelector('#logo');
               if (logo) logo.style.display = 'none';
-              // Also try finding any anchor/div with spline branding
               shadow.querySelectorAll('a[href*="spline"], div[id="logo"]').forEach(function (el) {
                 el.style.display = 'none';
               });
@@ -2577,17 +2591,47 @@
           } catch (e) {}
         };
         viewer.addEventListener('load', hideWatermark);
-        // Fallback: try hiding after a delay too
-        var fallbackTimer = setTimeout(function () { hideWatermark(); }, 5000);
+        var fallbackTimer = setTimeout(hideWatermark, 5000);
 
         containerRef.current.appendChild(viewer);
         return function () {
           clearTimeout(fallbackTimer);
+          viewerRef.current = null;
           if (containerRef.current && viewer.parentNode === containerRef.current) {
             containerRef.current.removeChild(viewer);
           }
         };
       }, [sceneUrl]);
+
+      // Pause/resume rendering when section scrolls in/out of view
+      useEffect(function () {
+        var viewer = viewerRef.current;
+        if (!viewer || !loaded) return;
+        try {
+          var shadow = viewer.shadowRoot;
+          if (!shadow) return;
+          var canvas = shadow.querySelector('canvas');
+          if (canvas) {
+            canvas.style.display = isVisible ? 'block' : 'none';
+          }
+        } catch (e) {}
+      }, [isVisible, loaded]);
+
+      // Lower pixel ratio on mobile for performance
+      useEffect(function () {
+        if (!loaded) return;
+        var viewer = viewerRef.current;
+        if (!viewer) return;
+        try {
+          var isMob = window.innerWidth < 768;
+          if (isMob && viewer.shadowRoot) {
+            var canvas = viewer.shadowRoot.querySelector('canvas');
+            if (canvas) {
+              canvas.style.imageRendering = 'auto';
+            }
+          }
+        } catch (e) {}
+      }, [loaded]);
 
       return React.createElement('div', {
         ref: containerRef,
@@ -2620,21 +2664,39 @@
       );
     }
 
+    var SPLINE_URL = 'https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode';
+
     function SplineSection() {
       var bp = useBreakpoint();
       var isMob = bp === 'mobile';
       var sectionRef = useRef(null);
+      var [shouldLoad, setShouldLoad] = useState(false);
       var [isVisible, setIsVisible] = useState(false);
 
       useEffect(function () {
         if (!sectionRef.current) return;
-        var obs = new IntersectionObserver(function (entries) {
-          if (entries[0].isIntersecting) setIsVisible(true);
-        }, { threshold: 0.1 });
-        obs.observe(sectionRef.current);
-        return function () { obs.disconnect(); };
-      }, []);
 
+        // Start prefetching when section is ~1 viewport away
+        var prefetchObs = new IntersectionObserver(function (entries) {
+          if (entries[0].isIntersecting) {
+            prefetchSpline(SPLINE_URL);
+            setShouldLoad(true);
+            prefetchObs.disconnect();
+          }
+        }, { rootMargin: '100% 0px' }); // trigger 1 viewport before visible
+
+        // Track actual visibility for pause/resume
+        var visObs = new IntersectionObserver(function (entries) {
+          setIsVisible(entries[0].isIntersecting);
+        }, { threshold: 0.05 });
+
+        prefetchObs.observe(sectionRef.current);
+        visObs.observe(sectionRef.current);
+        return function () {
+          prefetchObs.disconnect();
+          visObs.disconnect();
+        };
+      }, []);
 
       return (
         <section ref={sectionRef} id="spline-scene" style={{
@@ -2643,9 +2705,10 @@
           background: "#0a0a0a",
           overflow: "hidden"
         }}>
-          {isVisible && (
+          {shouldLoad && (
             <SplineScene
-              scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
+              scene={SPLINE_URL}
+              isVisible={isVisible}
             />
           )}
         </section>
@@ -2750,6 +2813,7 @@
 
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
+  <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"></script>
 </body>
 
 </html>
