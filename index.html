@@ -2547,38 +2547,30 @@
       );
     }
 
-    /* Prefetch spline scene when user is near the section */
-    var splinePrefetched = false;
-    function prefetchSpline(url) {
-      if (splinePrefetched) return;
-      splinePrefetched = true;
-      var link = document.createElement('link');
-      link.rel = 'prefetch';
-      link.href = url;
-      link.as = 'fetch';
-      link.crossOrigin = 'anonymous';
-      document.head.appendChild(link);
-    }
+    var SPLINE_URL = 'https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode';
 
-    function SplineScene(props) {
-      var sceneUrl = props.scene;
-      var isVisible = props.isVisible;
+    function SplineSection() {
+      var bp = useBreakpoint();
+      var isMob = bp === 'mobile';
+      var sectionRef = useRef(null);
       var containerRef = useRef(null);
       var viewerRef = useRef(null);
       var [loaded, setLoaded] = useState(false);
+      var [isVisible, setIsVisible] = useState(false);
 
+      // Create spline-viewer IMMEDIATELY on mount — loads in background
       useEffect(function () {
         if (!containerRef.current) return;
         var viewer = document.createElement('spline-viewer');
-        viewer.setAttribute('url', sceneUrl);
+        viewer.setAttribute('url', SPLINE_URL);
         viewer.style.width = '100%';
         viewer.style.height = '100%';
         viewer.style.display = 'block';
         viewerRef.current = viewer;
 
-        // Hide watermark after load
-        var hideWatermark = function () {
+        var onLoad = function () {
           setLoaded(true);
+          // Hide watermark
           try {
             var shadow = viewer.shadowRoot;
             if (shadow) {
@@ -2590,127 +2582,76 @@
             }
           } catch (e) {}
         };
-        viewer.addEventListener('load', hideWatermark);
-        var fallbackTimer = setTimeout(hideWatermark, 5000);
+        viewer.addEventListener('load', onLoad);
+        var fallback = setTimeout(onLoad, 8000);
 
         containerRef.current.appendChild(viewer);
         return function () {
-          clearTimeout(fallbackTimer);
+          clearTimeout(fallback);
           viewerRef.current = null;
           if (containerRef.current && viewer.parentNode === containerRef.current) {
             containerRef.current.removeChild(viewer);
           }
         };
-      }, [sceneUrl]);
+      }, []);
 
-      // Pause/resume rendering when section scrolls in/out of view
+      // Track visibility for pause/resume
+      useEffect(function () {
+        if (!sectionRef.current) return;
+        var obs = new IntersectionObserver(function (entries) {
+          setIsVisible(entries[0].isIntersecting);
+        }, { threshold: 0.05 });
+        obs.observe(sectionRef.current);
+        return function () { obs.disconnect(); };
+      }, []);
+
+      // Pause rendering when off-screen to save GPU
       useEffect(function () {
         var viewer = viewerRef.current;
         if (!viewer || !loaded) return;
         try {
           var shadow = viewer.shadowRoot;
-          if (!shadow) return;
-          var canvas = shadow.querySelector('canvas');
-          if (canvas) {
-            canvas.style.display = isVisible ? 'block' : 'none';
+          if (shadow) {
+            var canvas = shadow.querySelector('canvas');
+            if (canvas) canvas.style.display = isVisible ? 'block' : 'none';
           }
         } catch (e) {}
       }, [isVisible, loaded]);
 
-      // Lower pixel ratio on mobile for performance
-      useEffect(function () {
-        if (!loaded) return;
-        var viewer = viewerRef.current;
-        if (!viewer) return;
-        try {
-          var isMob = window.innerWidth < 768;
-          if (isMob && viewer.shadowRoot) {
-            var canvas = viewer.shadowRoot.querySelector('canvas');
-            if (canvas) {
-              canvas.style.imageRendering = 'auto';
-            }
-          }
-        } catch (e) {}
-      }, [loaded]);
-
-      return React.createElement('div', {
-        ref: containerRef,
-        style: { position: 'relative', width: '100%', height: '100%' }
-      },
-        !loaded && React.createElement('div', {
-          style: {
-            position: 'absolute', inset: 0, display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-            background: '#0a0a0a', zIndex: 2
-          }
-        },
-          React.createElement('div', {
-            style: {
-              width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.15)',
-              borderTopColor: '#1a2ffb', borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }
-          })
-        ),
-        /* Black cover over bottom-right corner to permanently hide Spline watermark */
-        React.createElement('div', {
-          style: {
-            position: 'absolute', bottom: 0, right: 0,
-            width: '200px', height: '48px',
-            background: '#0a0a0a', zIndex: 3,
-            pointerEvents: 'none'
-          }
-        })
-      );
-    }
-
-    var SPLINE_URL = 'https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode';
-
-    function SplineSection() {
-      var bp = useBreakpoint();
-      var isMob = bp === 'mobile';
-      var sectionRef = useRef(null);
-      var [shouldLoad, setShouldLoad] = useState(false);
-      var [isVisible, setIsVisible] = useState(false);
-
-      useEffect(function () {
-        if (!sectionRef.current) return;
-
-        // Start prefetching when section is ~1 viewport away
-        var prefetchObs = new IntersectionObserver(function (entries) {
-          if (entries[0].isIntersecting) {
-            prefetchSpline(SPLINE_URL);
-            setShouldLoad(true);
-            prefetchObs.disconnect();
-          }
-        }, { rootMargin: '100% 0px' }); // trigger 1 viewport before visible
-
-        // Track actual visibility for pause/resume
-        var visObs = new IntersectionObserver(function (entries) {
-          setIsVisible(entries[0].isIntersecting);
-        }, { threshold: 0.05 });
-
-        prefetchObs.observe(sectionRef.current);
-        visObs.observe(sectionRef.current);
-        return function () {
-          prefetchObs.disconnect();
-          visObs.disconnect();
-        };
-      }, []);
-
       return (
         <section ref={sectionRef} id="spline-scene" style={{
-          position: "relative", width: "100%",
-          height: "100vh",
-          background: "#0a0a0a",
-          overflow: "hidden"
+          position: 'relative', width: '100%',
+          height: '100vh',
+          background: '#0a0a0a',
+          overflow: 'hidden'
         }}>
-          {shouldLoad && (
-            <SplineScene
-              scene={SPLINE_URL}
-              isVisible={isVisible}
-            />
+          {React.createElement('div', {
+            ref: containerRef,
+            style: { position: 'absolute', inset: 0 }
+          })}
+          {!loaded && React.createElement('div', {
+            style: {
+              position: 'absolute', inset: 0, display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              background: '#0a0a0a', zIndex: 2
+            }
+          },
+            React.createElement('div', {
+              style: {
+                width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.15)',
+                borderTopColor: '#1a2ffb', borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }
+            })
           )}
+          {React.createElement('div', {
+            style: {
+              position: 'absolute', bottom: 0, right: 0,
+              width: '200px', height: '48px',
+              background: '#0a0a0a', zIndex: 3,
+              pointerEvents: 'none'
+            }
+          })}
         </section>
       );
     }
