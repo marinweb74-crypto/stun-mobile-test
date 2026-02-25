@@ -2549,31 +2549,55 @@
     }
 
     function SplineScene(props) {
-      var scene = props.scene;
-      var className = props.className || '';
+      var sceneUrl = props.scene;
       var containerRef = useRef(null);
       var [loaded, setLoaded] = useState(false);
 
       useEffect(function () {
         if (!containerRef.current) return;
         var viewer = document.createElement('spline-viewer');
-        viewer.setAttribute('url', scene);
+        viewer.setAttribute('url', sceneUrl);
         viewer.style.width = '100%';
         viewer.style.height = '100%';
-        viewer.addEventListener('load', function () { setLoaded(true); });
+        viewer.style.display = 'block';
+
+        // Hide "Built with Spline" watermark after load
+        var hideWatermark = function () {
+          setLoaded(true);
+          try {
+            var shadow = viewer.shadowRoot;
+            if (shadow) {
+              var logo = shadow.querySelector('#logo');
+              if (logo) logo.style.display = 'none';
+              // Also try finding any anchor/div with spline branding
+              shadow.querySelectorAll('a[href*="spline"], div[id="logo"]').forEach(function (el) {
+                el.style.display = 'none';
+              });
+            }
+          } catch (e) {}
+        };
+        viewer.addEventListener('load', hideWatermark);
+        // Fallback: try hiding after a delay too
+        var fallbackTimer = setTimeout(function () { hideWatermark(); }, 5000);
+
         containerRef.current.appendChild(viewer);
         return function () {
+          clearTimeout(fallbackTimer);
           if (containerRef.current && viewer.parentNode === containerRef.current) {
             containerRef.current.removeChild(viewer);
           }
         };
-      }, [scene]);
+      }, [sceneUrl]);
 
-      return React.createElement('div', { ref: containerRef, className: className, style: { position: 'relative' } },
+      return React.createElement('div', {
+        ref: containerRef,
+        style: { position: 'relative', width: '100%', height: '100%' }
+      },
         !loaded && React.createElement('div', {
           style: {
             position: 'absolute', inset: 0, display: 'flex',
-            alignItems: 'center', justifyContent: 'center'
+            alignItems: 'center', justifyContent: 'center',
+            background: '#0a0a0a'
           }
         },
           React.createElement('div', {
@@ -2606,54 +2630,15 @@
       return (
         <section ref={sectionRef} id="spline-scene" style={{
           position: "relative", width: "100%",
-          minHeight: isMob ? "500px" : "600px",
-          background: "rgba(0,0,0,0.96)",
-          overflow: "hidden", borderRadius: "0"
+          height: "100vh",
+          background: "#0a0a0a",
+          overflow: "hidden"
         }}>
-          <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
-
-          <div style={{
-            display: "flex", flexDirection: isMob ? "column" : "row",
-            height: "100%", minHeight: isMob ? "500px" : "600px"
-          }}>
-            {/* Left content */}
-            <div style={{
-              flex: 1, padding: isMob ? "40px 24px 0" : "48px",
-              position: "relative", zIndex: 10,
-              display: "flex", flexDirection: "column", justifyContent: "center"
-            }}>
-              <h2 style={{
-                fontSize: isMob ? "32px" : "48px", fontWeight: 700,
-                fontFamily: "Archivo, sans-serif",
-                backgroundImage: "linear-gradient(to bottom, #fafafa, #a3a3a3)",
-                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                lineHeight: 1.1, margin: 0
-              }}>
-                Interactive 3D
-              </h2>
-              <p style={{
-                marginTop: "16px", color: "#d4d4d4", maxWidth: "480px",
-                fontSize: isMob ? "15px" : "17px", lineHeight: 1.6,
-                fontFamily: "Onest, sans-serif"
-              }}>
-                Bring your UI to life with beautiful 3D scenes. Create immersive experiences
-                that capture attention and enhance your design.
-              </p>
-            </div>
-
-            {/* Right content — Spline 3D */}
-            <div style={{
-              flex: 1, position: "relative",
-              minHeight: isMob ? "300px" : "400px"
-            }}>
-              {isVisible && (
-                <SplineScene
-                  scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
-                  className="w-full h-full"
-                />
-              )}
-            </div>
-          </div>
+          {isVisible && (
+            <SplineScene
+              scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
+            />
+          )}
         </section>
       );
     }
