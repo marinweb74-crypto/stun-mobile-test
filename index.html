@@ -1196,6 +1196,10 @@
     }
 
     // ========== NAVIGATION ==========
+    // Global AudioContext for unlocking autoplay
+    var audioCtx = null;
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+
     function Navigation() {
       var bp = useBreakpoint();
       var isMob = bp === 'mobile';
@@ -1203,6 +1207,7 @@
       const [menuOpen, setMenuOpen] = useState(false);
       const [soundOn, setSoundOn] = useState(true);
       const [hideNav, setHideNav] = useState(false);
+      const audioStarted = useRef(false);
       // Hide nav when robot section is in view
       useEffect(() => {
         var robotEl = document.getElementById('robot');
@@ -1237,10 +1242,35 @@
         return function () { window.removeEventListener('scroll', onScroll); };
       }, []);
 
+      // Unlock audio via AudioContext.resume() on any gesture (scroll counts!)
+      useEffect(() => {
+        var tryUnlock = function () {
+          if (audioStarted.current) return;
+          if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+          }
+          globalSoundOn = true;
+          globalMusic.play().then(function () {
+            audioStarted.current = true;
+            musicTargetVol = 0.3;
+          }).catch(function () {});
+        };
+        // Try immediately
+        tryUnlock();
+        // Also on any interaction
+        var events = ['scroll', 'wheel', 'touchstart', 'touchmove', 'click', 'mousedown', 'keydown', 'mousemove'];
+        events.forEach(function (e) { document.addEventListener(e, tryUnlock, { passive: true }); });
+        return function () {
+          events.forEach(function (e) { document.removeEventListener(e, tryUnlock); });
+        };
+      }, []);
+
       useEffect(() => {
         globalSoundOn = soundOn;
         if (soundOn) {
-          globalMusic.play().catch(function () { });
+          if (audioStarted.current) {
+            globalMusic.play().catch(function () { });
+          }
           musicTargetVol = 0.3;
         } else {
           globalMusic.pause();
@@ -3199,7 +3229,7 @@
     function App() {
       var bp = useBreakpoint();
       var isMob = bp === 'mobile';
-      const [phase, setPhase] = useState('loading'); // 'loading' → 'splash' → 'ready'
+      const [phase, setPhase] = useState('loading'); // 'loading' → 'ready'
       const revealRef = useReveal();
       const heroTextRef = useRef(null);
       const heroRectRef = useRef(null);
@@ -3208,14 +3238,9 @@
       useSmoothScroll();
       useHeroParallax(heroTextRef, heroRectRef, heroCrosshairsRef, heroScrollRef);
 
-      var handleEnter = function () {
-        setPhase('ready');
-      };
-
       return (
         <div ref={revealRef}>
-          {phase === 'loading' && <LoadingBar onLoaded={function () { setPhase('splash'); }} />}
-          {phase === 'splash' && <SplashScreen onEnter={handleEnter} />}
+          {phase === 'loading' && <LoadingBar onLoaded={function () { setPhase('ready'); }} />}
           <CustomCursor />
           <Navigation />
 
