@@ -1620,7 +1620,7 @@
       return (
         <section ref={sectionRef} id="about" style={{
           position: 'relative', background: '#0a0a0a',
-          borderRadius: '48px 48px 0 0', marginTop: isMob ? '-40vh' : '-100vh', zIndex: 2,
+          borderRadius: '48px 48px 0 0', marginTop: '-100vh', zIndex: 2,
           boxShadow: '0 -20px 60px rgba(0,0,0,0.5)',
           height: isMob ? 'auto' : '500vh',
           paddingBottom: isMob ? '80px' : '0'
@@ -1740,6 +1740,19 @@
             });
           }, { threshold: 0.3 });
           cardEls.forEach(function (el) { flipObs.observe(el); });
+
+          // Make cards container sticky so About can overlap the last card
+          var stickyWrap = sectionRef.current.querySelector('[data-cards-wrap]');
+          if (stickyWrap) {
+            var contentH = stickyWrap.scrollHeight;
+            var vh = window.innerHeight;
+            var stickyTop = -(contentH - vh);
+            stickyWrap.style.position = 'sticky';
+            stickyWrap.style.top = stickyTop + 'px';
+            // Set section height so there's scroll room for the overlap
+            section.style.height = (contentH + vh) + 'px';
+          }
+
           return function () { flipObs.disconnect(); };
         }
 
@@ -1894,7 +1907,7 @@
           height: isMob ? 'auto' : '530vh',
           position: 'relative', background: '#f0f1fa', zIndex: 1
         }}>
-          <div style={{
+          <div data-cards-wrap="" style={{
             position: isMob ? 'relative' : 'sticky', top: 0, height: isMob ? 'auto' : '100vh',
             display: 'flex', flexDirection: isMob ? 'column' : 'row',
             alignItems: isMob ? 'flex-start' : 'center', justifyContent: isMob ? 'flex-start' : 'center',
