@@ -1911,7 +1911,7 @@
             position: isMob ? 'relative' : 'sticky', top: 0, height: isMob ? 'auto' : '100vh',
             display: 'flex', flexDirection: isMob ? 'column' : 'row',
             alignItems: isMob ? 'flex-start' : 'center', justifyContent: isMob ? 'flex-start' : 'center',
-            paddingTop: isMob ? '100px' : '0'
+            paddingTop: isMob ? '40px' : '0'
           }}>
             {/* Header */}
             <div ref={labelRef} style={{
@@ -3248,7 +3248,7 @@
           <Navigation initialSound={initialSound} />
 
           {/* HERO */}
-          <section className="min-h-screen flex flex-col items-center bg-[#f0f1fa] relative" style={{ paddingBottom: isMob ? '8px' : '64px', justifyContent: isMob ? 'flex-start' : 'flex-end' }}>
+          <section className="flex flex-col items-center bg-[#f0f1fa] relative" style={{ paddingBottom: isMob ? '8px' : '64px', justifyContent: isMob ? 'flex-start' : 'flex-end', minHeight: isMob ? 'auto' : '100vh' }}>
             {/* Text grid — Lusion-style 12-column layout */}
             <div style={{
               display: 'grid',
