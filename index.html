@@ -2556,7 +2556,6 @@
       var containerRef = useRef(null);
       var viewerRef = useRef(null);
       var [loaded, setLoaded] = useState(false);
-      var [isVisible, setIsVisible] = useState(false);
 
       // Create spline-viewer IMMEDIATELY on mount — loads in background
       useEffect(function () {
@@ -2595,28 +2594,6 @@
         };
       }, []);
 
-      // Track visibility for pause/resume
-      useEffect(function () {
-        if (!sectionRef.current) return;
-        var obs = new IntersectionObserver(function (entries) {
-          setIsVisible(entries[0].isIntersecting);
-        }, { threshold: 0.05 });
-        obs.observe(sectionRef.current);
-        return function () { obs.disconnect(); };
-      }, []);
-
-      // Pause rendering when off-screen to save GPU
-      useEffect(function () {
-        var viewer = viewerRef.current;
-        if (!viewer || !loaded) return;
-        try {
-          var shadow = viewer.shadowRoot;
-          if (shadow) {
-            var canvas = shadow.querySelector('canvas');
-            if (canvas) canvas.style.display = isVisible ? 'block' : 'none';
-          }
-        } catch (e) {}
-      }, [isVisible, loaded]);
 
       return (
         <section ref={sectionRef} id="spline-scene" style={{
