@@ -485,8 +485,11 @@
     var globalSoundOn = false;
     var globalMusic = new Audio('./music.mp3');
     globalMusic.loop = true;
-    globalMusic.volume = 0.3;
+    globalMusic.volume = 0;
+    globalMusic.muted = true;
     globalMusic.preload = 'auto';
+    // Start muted playback immediately so audio buffers with no delay
+    globalMusic.play().catch(function () {});
     // Dual-buffer seamless loop for space track
     var spaceA = new Audio('./space.mp3');
     var spaceB = new Audio('./space.mp3');
@@ -1242,22 +1245,24 @@
         return function () { window.removeEventListener('scroll', onScroll); };
       }, []);
 
-      // Unlock audio via AudioContext.resume() on any gesture (scroll counts!)
+      // Unmute audio on any gesture — audio is already playing muted
       useEffect(() => {
         var tryUnlock = function () {
           if (audioStarted.current) return;
+          audioStarted.current = true;
           if (audioCtx && audioCtx.state === 'suspended') {
             audioCtx.resume();
           }
           globalSoundOn = true;
-          globalMusic.play().then(function () {
-            audioStarted.current = true;
-            musicTargetVol = 0.3;
-          }).catch(function () {});
+          globalMusic.muted = false;
+          globalMusic.volume = 0;
+          musicTargetVol = 0.3;
+          // If muted play failed earlier, retry
+          if (globalMusic.paused) {
+            globalMusic.play().catch(function () {});
+          }
+          events.forEach(function (e) { document.removeEventListener(e, tryUnlock); });
         };
-        // Try immediately
-        tryUnlock();
-        // Also on any interaction
         var events = ['scroll', 'wheel', 'touchstart', 'touchmove', 'click', 'mousedown', 'keydown', 'mousemove'];
         events.forEach(function (e) { document.addEventListener(e, tryUnlock, { passive: true }); });
         return function () {
