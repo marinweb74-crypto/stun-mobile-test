@@ -445,7 +445,7 @@
     }
     .mobile-card-flip {
       transform: rotateY(180deg);
-      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .mobile-card-flip.flipped {
       transform: rotateY(360deg);
@@ -2033,19 +2033,19 @@
                     }}>
                       {/* Top — title + letter */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <p style={{ fontSize: isMob ? '28px' : '42px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '-0.02em' }}>{s.title}</p>
-                        <div style={{ fontSize: isMob ? '52px' : '80px', fontWeight: 200, color: '#1a2ffb', lineHeight: 0.9 }}>{s.letter}</div>
+                        <p style={{ fontSize: isMob ? '34px' : '42px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '-0.02em' }}>{s.title}</p>
+                        <div style={{ fontSize: isMob ? '60px' : '80px', fontWeight: 200, color: '#1a2ffb', lineHeight: 0.9 }}>{s.letter}</div>
                       </div>
                       {/* Items list */}
                       <ul style={{ listStyleType: 'none', padding: 0, margin: 0 }}>
                         {s.items.map(function (item, j) {
-                          return <li key={j} style={{ fontSize: isMob ? '18px' : '28px', color: 'rgba(255,255,255,0.5)', padding: isMob ? '8px 0' : '10px 0', borderBottom: j < s.items.length - 1 ? (isMob ? '3px' : '5px') + ' dotted rgba(255,255,255,0.25)' : 'none', fontWeight: 500 }}>{item}</li>;
+                          return <li key={j} style={{ fontSize: isMob ? '24px' : '28px', color: 'rgba(255,255,255,0.5)', padding: isMob ? '14px 0' : '10px 0', borderBottom: j < s.items.length - 1 ? (isMob ? '1px' : '5px') + ' ' + (isMob ? 'solid' : 'dotted') + ' rgba(255,255,255,0.15)' : 'none', fontWeight: 500 }}>{item}</li>;
                         })}
                       </ul>
                       {/* Bottom — mirrored (rotated 180) */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', transform: 'rotate(180deg)' }}>
-                        <p style={{ fontSize: isMob ? '28px' : '42px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '-0.02em' }}>{s.title}</p>
-                        <div style={{ fontSize: isMob ? '52px' : '80px', fontWeight: 200, color: '#1a2ffb', lineHeight: 0.9 }}>{s.letter}</div>
+                        <p style={{ fontSize: isMob ? '34px' : '42px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '-0.02em' }}>{s.title}</p>
+                        <div style={{ fontSize: isMob ? '60px' : '80px', fontWeight: 200, color: '#1a2ffb', lineHeight: 0.9 }}>{s.letter}</div>
                       </div>
                     </div>
                   </div>
