@@ -1620,7 +1620,7 @@
       return (
         <section ref={sectionRef} id="about" style={{
           position: 'relative', background: '#0a0a0a',
-          borderRadius: '48px 48px 0 0', marginTop: '-100vh', zIndex: 2,
+          borderRadius: '48px 48px 0 0', marginTop: isMob ? '-40vh' : '-100vh', zIndex: 2,
           boxShadow: '0 -20px 60px rgba(0,0,0,0.5)',
           height: isMob ? 'auto' : '500vh',
           paddingBottom: isMob ? '80px' : '0'
@@ -1892,7 +1892,6 @@
       return (
         <section ref={sectionRef} id="services" style={{
           height: isMob ? 'auto' : '530vh',
-          paddingBottom: isMob ? '120vh' : '0',
           position: 'relative', background: '#f0f1fa', zIndex: 1
         }}>
           <div style={{
