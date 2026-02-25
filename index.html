@@ -3243,8 +3243,8 @@
     function App() {
       var bp = useBreakpoint();
       var isMob = bp === 'mobile';
-      const [phase, setPhase] = useState('loading'); // 'loading' → 'splash' → 'ready'
-      const [initialSound, setInitialSound] = useState(false);
+      const [phase, setPhase] = useState('loading'); // 'loading' → 'ready'
+      const [initialSound, setInitialSound] = useState(true);
       const revealRef = useReveal();
       const heroTextRef = useRef(null);
       const heroRectRef = useRef(null);
@@ -3253,15 +3253,16 @@
       useSmoothScroll();
       useHeroParallax(heroTextRef, heroRectRef, heroCrosshairsRef, heroScrollRef);
 
-      var handleEnter = function (withSound) {
-        setInitialSound(withSound);
+      var handleLoaded = function () {
         setPhase('ready');
+        globalSoundOn = true;
+        globalMusic.play().catch(function () { });
+        startSpaceLoop();
       };
 
       return (
         <div ref={revealRef}>
-          {phase === 'loading' && <LoadingBar onLoaded={function () { setPhase('splash'); }} />}
-          {phase === 'splash' && <SplashScreen onEnter={handleEnter} />}
+          {phase === 'loading' && <LoadingBar onLoaded={handleLoaded} />}
           <CustomCursor />
           <Navigation initialSound={initialSound} />
 
