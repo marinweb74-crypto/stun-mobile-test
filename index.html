@@ -485,11 +485,8 @@
     var globalSoundOn = false;
     var globalMusic = new Audio('./music.mp3');
     globalMusic.loop = true;
-    globalMusic.volume = 0;
-    globalMusic.muted = true;
+    globalMusic.volume = 0.3;
     globalMusic.preload = 'auto';
-    // Start muted playback immediately so audio buffers with no delay
-    globalMusic.play().catch(function () {});
     // Dual-buffer seamless loop for space track
     var spaceA = new Audio('./space.mp3');
     var spaceB = new Audio('./space.mp3');
@@ -1245,28 +1242,25 @@
         return function () { window.removeEventListener('scroll', onScroll); };
       }, []);
 
-      // Unmute audio on any gesture — audio is already playing muted
+      // Try to start audio on every gesture until it works
       useEffect(() => {
-        var tryUnlock = function () {
+        var tryPlay = function () {
           if (audioStarted.current) return;
-          audioStarted.current = true;
           if (audioCtx && audioCtx.state === 'suspended') {
             audioCtx.resume();
           }
-          globalSoundOn = true;
-          globalMusic.muted = false;
-          globalMusic.volume = 0;
-          musicTargetVol = 0.3;
-          // If muted play failed earlier, retry
-          if (globalMusic.paused) {
-            globalMusic.play().catch(function () {});
-          }
-          events.forEach(function (e) { document.removeEventListener(e, tryUnlock); });
+          globalMusic.play().then(function () {
+            audioStarted.current = true;
+            globalSoundOn = true;
+            musicTargetVol = 0.3;
+          }).catch(function () {});
         };
-        var events = ['scroll', 'wheel', 'touchstart', 'touchmove', 'click', 'mousedown', 'keydown', 'mousemove'];
-        events.forEach(function (e) { document.addEventListener(e, tryUnlock, { passive: true }); });
+        // Try immediately
+        tryPlay();
+        var events = ['click', 'touchstart', 'mousedown', 'keydown', 'scroll', 'wheel', 'touchmove', 'mousemove'];
+        events.forEach(function (e) { document.addEventListener(e, tryPlay, { passive: true }); });
         return function () {
-          events.forEach(function (e) { document.removeEventListener(e, tryUnlock); });
+          events.forEach(function (e) { document.removeEventListener(e, tryPlay); });
         };
       }, []);
 
