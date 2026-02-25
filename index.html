@@ -2516,6 +2516,110 @@
         </>
       );
     }
+    // ========== PORTFOLIO — SCROLL FLY-IN ==========
+    function PortfolioSection() {
+      var bp = useBreakpoint();
+      var isMob = bp === 'mobile';
+      var sectionRef = useRef(null);
+      var rectRef = useRef(null);
+      var progressRef = useRef(0);
+
+      useEffect(function () {
+        var section = sectionRef.current;
+        var rect = rectRef.current;
+        if (!section || !rect) return;
+
+        var onScroll = function () {
+          var bounds = section.getBoundingClientRect();
+          var vh = window.innerHeight;
+          var sectionH = section.offsetHeight;
+
+          // Progress: 0 when section top hits viewport bottom, 1 when section bottom hits viewport top
+          var raw = (vh - bounds.top) / (sectionH + vh);
+          var p = Math.max(0, Math.min(1, raw));
+          progressRef.current = p;
+
+          // Fly-in transforms based on scroll progress
+          // Phase 1 (0→0.4): fly in from depth — rotateX decreases, scale increases, translateY moves up
+          // Phase 2 (0.4→0.7): settle into final position — flatten out
+          // Phase 3 (0.7→1): hold position, slight float
+
+          var rotateX, scale, translateY, opacity;
+
+          if (p < 0.4) {
+            // Flying in
+            var t = p / 0.4; // 0→1 within phase 1
+            var ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
+            rotateX = 45 * (1 - ease);   // 45° → 0°
+            scale = 0.5 + 0.5 * ease;     // 0.5 → 1.0
+            translateY = 200 * (1 - ease); // 200px → 0px
+            opacity = 0.3 + 0.7 * ease;   // 0.3 → 1.0
+          } else if (p < 0.7) {
+            // Settled
+            var t2 = (p - 0.4) / 0.3;
+            rotateX = 0;
+            scale = 1.0;
+            translateY = 0;
+            opacity = 1;
+          } else {
+            // Gentle float at rest
+            rotateX = 0;
+            scale = 1.0;
+            translateY = 0;
+            opacity = 1;
+          }
+
+          rect.style.transform = 'perspective(1200px) rotateX(' + rotateX + 'deg) scale(' + scale + ') translateY(' + translateY + 'px)';
+          rect.style.opacity = opacity;
+        };
+
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll(); // initial position
+        return function () { window.removeEventListener('scroll', onScroll); };
+      }, []);
+
+      return (
+        <section ref={sectionRef} style={{
+          position: 'relative',
+          height: isMob ? '250vh' : '300vh',
+          background: '#f0f1fa',
+          zIndex: 1
+        }}>
+          <div style={{
+            position: 'sticky', top: 0, height: '100vh',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            perspective: '1200px',
+            overflow: 'hidden'
+          }}>
+            <div ref={rectRef} style={{
+              width: isMob ? '90vw' : '75vw',
+              height: isMob ? '50vh' : '70vh',
+              borderRadius: isMob ? '24px' : '32px',
+              background: '#0a0a0a',
+              transformOrigin: 'center bottom',
+              willChange: 'transform, opacity',
+              boxShadow: '0 40px 80px rgba(0,0,0,0.3)',
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              {/* Placeholder — video will go here */}
+              <span style={{
+                color: 'rgba(255,255,255,0.15)',
+                fontSize: isMob ? '24px' : '40px',
+                fontFamily: 'Archivo, sans-serif',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '4px',
+                userSelect: 'none'
+              }}>PORTFOLIO</span>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     // ========== SPLINE 3D SECTION ==========
     function Spotlight(props) {
       var className = props.className || '';
@@ -2719,6 +2823,9 @@
           <AboutSection />
 
 
+
+          {/* PORTFOLIO */}
+          <PortfolioSection />
 
           {/* SPLINE 3D */}
           <SplineSection />
