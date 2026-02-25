@@ -1741,6 +1741,19 @@
           }, { threshold: 0.3 });
           cardEls.forEach(function (el) { flipObs.observe(el); });
 
+          // EXPERTISE slide animation on mobile
+          var mobSlideObs = new IntersectionObserver(function (entries) {
+            if (entries[0].isIntersecting) {
+              setTimeout(function () {
+                if (expertiseRef.current) {
+                  expertiseRef.current.style.paddingLeft = (window.innerWidth * 0.15) + 'px';
+                }
+              }, 300);
+              mobSlideObs.disconnect();
+            }
+          }, { threshold: 0.05 });
+          mobSlideObs.observe(section);
+
           // Make cards container sticky so About can overlap the last card
           var stickyWrap = sectionRef.current.querySelector('[data-cards-wrap]');
           if (stickyWrap) {
@@ -1753,7 +1766,7 @@
             section.style.height = (contentH + vh) + 'px';
           }
 
-          return function () { flipObs.disconnect(); };
+          return function () { flipObs.disconnect(); mobSlideObs.disconnect(); };
         }
 
         var onScroll = function () {
@@ -1923,20 +1936,22 @@
               zIndex: 20,
             }}>
               <h2 style={{
-                fontSize: 'clamp(3.5rem, 10vw, 11rem)', fontWeight: 500,
+                fontSize: isMob ? 'clamp(2.2rem, 9vw, 3.5rem)' : 'clamp(3.5rem, 10vw, 11rem)', fontWeight: 500,
                 lineHeight: 0.88, letterSpacing: '-0.02em', color: '#1a2ffb',
                 textTransform: 'uppercase', fontFamily: 'Archivo, sans-serif',
               }}>
                 AREA OF<br />
-                <span style={{ position: 'relative', display: 'inline-block' }}>
+                <span ref={expertiseRef} style={{ position: 'relative', display: 'inline-block', paddingLeft: '0px', transition: 'padding-left 0.8s cubic-bezier(0.22, 1, 0.36, 1)' }}>
                   EXPERTISE
                   {/* Right description */}
-                  <div style={{
+                  <div ref={descRef} style={{
                     position: isMob ? 'relative' : 'absolute', top: isMob ? '16px' : '-0.65em',
                     right: isMob ? 'auto' : '0', left: isMob ? 0 : 'auto',
                     maxWidth: '458px', width: 'max-content',
                     letterSpacing: 'normal', textTransform: 'none', lineHeight: 'normal',
-                    opacity: isMob ? 1 : undefined // Natively show on mobile
+                    opacity: isMob ? 1 : 0,
+                    transform: isMob ? 'none' : 'translateX(-30px)',
+                    transition: 'opacity 0.6s ease, transform 0.6s ease',
                   }}>
                     <p style={{
                       fontSize: isMob ? '14px' : '20px', textTransform: 'uppercase', letterSpacing: '1.6px',
