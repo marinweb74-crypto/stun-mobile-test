@@ -2597,7 +2597,7 @@
           style: {
             position: 'absolute', inset: 0, display: 'flex',
             alignItems: 'center', justifyContent: 'center',
-            background: '#0a0a0a'
+            background: '#0a0a0a', zIndex: 2
           }
         },
           React.createElement('div', {
@@ -2607,7 +2607,16 @@
               animation: 'spin 1s linear infinite'
             }
           })
-        )
+        ),
+        /* Black cover over bottom-right corner to permanently hide Spline watermark */
+        React.createElement('div', {
+          style: {
+            position: 'absolute', bottom: 0, right: 0,
+            width: '200px', height: '48px',
+            background: '#0a0a0a', zIndex: 3,
+            pointerEvents: 'none'
+          }
+        })
       );
     }
 
