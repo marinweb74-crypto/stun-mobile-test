@@ -560,81 +560,42 @@
     // ========== PRELOADER ==========
     function SplashScreen({ onEnter }) {
       var containerRef = useRef(null);
-      var chosen = useRef(false);
-      var soundRef = useRef(null);
-      var muteRef = useRef(null);
+      var btnRef = useRef(null);
 
-      var handleClick = function (withSound) {
-        if (chosen.current) return;
-        chosen.current = true;
-
-        if (withSound) {
-          globalSoundOn = true;
-          globalMusic.play().catch(function () { });
-          startSpaceLoop();
-        }
+      var handleClick = function () {
+        globalSoundOn = true;
+        globalMusic.play().catch(function () { });
 
         containerRef.current.style.transition = 'opacity 0.6s ease';
         containerRef.current.style.opacity = '0';
-        setTimeout(function () { onEnter(withSound); }, 700);
-      };
-
-      // Hover scale effect
-      var onEnterIcon = function (ref) {
-        if (ref.current) ref.current.style.transform = 'scale(1.15)';
-      };
-      var onLeaveIcon = function (ref) {
-        if (ref.current) ref.current.style.transform = 'scale(1)';
+        setTimeout(function () { onEnter(); }, 700);
       };
 
       return (
         <div ref={containerRef} style={{
           position: 'fixed', inset: 0, zIndex: 99999, background: '#0a0a0a',
           display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: '60px',
+          alignItems: 'center', justifyContent: 'center', gap: '40px',
         }}>
-          <div style={{ display: 'flex', gap: 'clamp(24px, 6vw, 120px)', alignItems: 'center' }}>
-            {/* Sound ON */}
-            <div
-              onClick={function () { handleClick(true); }}
-              onMouseEnter={function () { onEnterIcon(soundRef); }}
-              onMouseLeave={function () { onLeaveIcon(soundRef); }}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'none' }}>
-              <div ref={soundRef} style={{
-                width: 'clamp(140px, 18vw, 220px)', height: 'clamp(140px, 18vw, 220px)',
-                borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'transform 0.4s cubic-bezier(0.16,1,0.3,1), border-color 0.3s',
-                background: 'rgba(255,255,255,0.05)',
-              }}>
-                <svg width="45%" height="45%" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="#fff" stroke="none" />
-                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                </svg>
-              </div>
-            </div>
-
-            {/* Mute */}
-            <div
-              onClick={function () { handleClick(false); }}
-              onMouseEnter={function () { onEnterIcon(muteRef); }}
-              onMouseLeave={function () { onLeaveIcon(muteRef); }}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'none' }}>
-              <div ref={muteRef} style={{
-                width: 'clamp(140px, 18vw, 220px)', height: 'clamp(140px, 18vw, 220px)',
-                borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'transform 0.4s cubic-bezier(0.16,1,0.3,1), border-color 0.3s',
-                background: 'rgba(255,255,255,0.05)',
-              }}>
-                <svg width="45%" height="45%" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="#fff" stroke="none" />
-                  <line x1="23" y1="9" x2="17" y2="15" />
-                  <line x1="17" y1="9" x2="23" y2="15" />
-                </svg>
-              </div>
-            </div>
+          <div style={{
+            fontFamily: 'Archivo, sans-serif', fontSize: 'clamp(32px, 6vw, 56px)',
+            fontWeight: 500, color: '#fff', letterSpacing: '-0.03em', textTransform: 'uppercase',
+          }}>STUN</div>
+          <div
+            ref={btnRef}
+            onClick={handleClick}
+            onMouseEnter={function () { if (btnRef.current) btnRef.current.style.background = 'rgba(26,47,251,0.15)'; }}
+            onMouseLeave={function () { if (btnRef.current) btnRef.current.style.background = 'transparent'; }}
+            style={{
+              width: 'clamp(120px, 16vw, 180px)', height: 'clamp(120px, 16vw, 180px)',
+              borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', transition: 'background 0.3s, transform 0.3s',
+              background: 'transparent',
+            }}>
+            <svg width="40%" height="40%" viewBox="0 0 24 24" fill="#fff" stroke="none">
+              <polygon points="6,3 20,12 6,21" />
+            </svg>
           </div>
         </div>
       );
@@ -1235,14 +1196,13 @@
     }
 
     // ========== NAVIGATION ==========
-    function Navigation({ initialSound }) {
+    function Navigation() {
       var bp = useBreakpoint();
       var isMob = bp === 'mobile';
       const [scrolled, setScrolled] = useState(false);
       const [menuOpen, setMenuOpen] = useState(false);
-      const [soundOn, setSoundOn] = useState(false);
+      const [soundOn, setSoundOn] = useState(true);
       const [hideNav, setHideNav] = useState(false);
-      const audioUnlocked = useRef(false);
       // Hide nav when robot section is in view
       useEffect(() => {
         var robotEl = document.getElementById('robot');
@@ -1275,30 +1235,6 @@
         };
         window.addEventListener('scroll', onScroll, { passive: true });
         return function () { window.removeEventListener('scroll', onScroll); };
-      }, []);
-
-      // Try to play immediately, fallback to first interaction
-      useEffect(() => {
-        var tryPlay = function () {
-          if (audioUnlocked.current) return;
-          audioUnlocked.current = true;
-          setSoundOn(true);
-        };
-        // Attempt immediate play
-        globalMusic.play().then(function () {
-          tryPlay();
-        }).catch(function () {
-          // Browser blocked — wait for interaction
-          var unlock = function () {
-            tryPlay();
-            ['click', 'touchstart', 'scroll', 'mousedown', 'keydown'].forEach(function (e) {
-              document.removeEventListener(e, unlock);
-            });
-          };
-          ['click', 'touchstart', 'scroll', 'mousedown', 'keydown'].forEach(function (e) {
-            document.addEventListener(e, unlock);
-          });
-        });
       }, []);
 
       useEffect(() => {
@@ -3263,8 +3199,7 @@
     function App() {
       var bp = useBreakpoint();
       var isMob = bp === 'mobile';
-      const [phase, setPhase] = useState('loading'); // 'loading' → 'ready'
-      const [initialSound, setInitialSound] = useState(true);
+      const [phase, setPhase] = useState('loading'); // 'loading' → 'splash' → 'ready'
       const revealRef = useReveal();
       const heroTextRef = useRef(null);
       const heroRectRef = useRef(null);
@@ -3273,15 +3208,16 @@
       useSmoothScroll();
       useHeroParallax(heroTextRef, heroRectRef, heroCrosshairsRef, heroScrollRef);
 
-      var handleLoaded = function () {
+      var handleEnter = function () {
         setPhase('ready');
       };
 
       return (
         <div ref={revealRef}>
-          {phase === 'loading' && <LoadingBar onLoaded={handleLoaded} />}
+          {phase === 'loading' && <LoadingBar onLoaded={function () { setPhase('splash'); }} />}
+          {phase === 'splash' && <SplashScreen onEnter={handleEnter} />}
           <CustomCursor />
-          <Navigation initialSound={initialSound} />
+          <Navigation />
 
           {/* HERO */}
           <section className="flex flex-col items-center bg-[#f0f1fa] relative" style={{ paddingBottom: isMob ? '8px' : '64px', justifyContent: isMob ? 'flex-start' : 'flex-end', minHeight: isMob ? 'auto' : '100vh' }}>
