@@ -1620,7 +1620,7 @@
       return (
         <section ref={sectionRef} id="about" style={{
           position: 'relative', background: '#0a0a0a',
-          borderRadius: '48px 48px 0 0', marginTop: isMob ? '0' : '-100vh', zIndex: 2,
+          borderRadius: '48px 48px 0 0', marginTop: '-100vh', zIndex: 2,
           boxShadow: '0 -20px 60px rgba(0,0,0,0.5)',
           height: isMob ? 'auto' : '500vh',
           paddingBottom: isMob ? '80px' : '0'
@@ -1887,12 +1887,12 @@
         };
       }, [isMob]);
 
-      var cardW = isMob ? 280 : 420, cardH = isMob ? 420 : 560;
+      var cardW = isMob ? 280 : 420, cardH = isMob ? 520 : 560;
 
       return (
         <section ref={sectionRef} id="services" style={{
           height: isMob ? 'auto' : '530vh',
-          paddingBottom: isMob ? '80px' : '0',
+          paddingBottom: isMob ? '120vh' : '0',
           position: 'relative', background: '#f0f1fa', zIndex: 1
         }}>
           <div style={{
@@ -1942,12 +1942,12 @@
             {/* Cards */}
             <div style={{
               position: 'relative',
-              width: isMob ? '90vw' : cardW + 'px',
+              width: isMob ? '92vw' : cardW + 'px',
               height: isMob ? 'auto' : cardH + 'px',
               display: isMob ? 'flex' : 'block',
               flexDirection: 'column',
-              gap: isMob ? '24px' : '0',
-              marginLeft: isMob ? '5vw' : '0',
+              gap: isMob ? '40px' : '0',
+              marginLeft: isMob ? '4vw' : '0',
               marginTop: isMob ? '20px' : '0',
               perspective: isMob ? '1200px' : 'none',
             }}>
@@ -1955,7 +1955,7 @@
                 return (
                   <div key={i} ref={function (el) { cardsRef.current[i] = el; }} className={isMob ? 'mobile-card-flip' : undefined} style={{
                     position: isMob ? 'relative' : 'absolute', top: 0, left: 0,
-                    width: '100%', height: isMob ? '420px' : cardH + 'px',
+                    width: '100%', height: isMob ? cardH + 'px' : cardH + 'px',
                     borderRadius: '20px',
                     zIndex: 10 + i,
                     willChange: isMob ? 'auto' : 'transform',
