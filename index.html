@@ -13,6 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/DRACOLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.24.0/babel.min.js"></script>
   <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
+  <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"></script>
   <script>window.onerror = function (m, s, l, c, e) { document.body.innerHTML = '<pre style="color:red;padding:40px;font-size:14px">' + m + '\n\nLine: ' + l + '\n' + (e && e.stack || '') + '</pre>'; }</script>
   <script>
     window.__geoCache = null;
@@ -28,7 +29,9 @@
       theme: {
         extend: {
           colors: { dark: '#0a0a0a', surface: '#111111', accent: '#1a2ffb', light: '#f0f1fa' },
-          fontFamily: { sans: ['Onest', 'sans-serif'], mono: ['IBM Plex Mono', 'monospace'], display: ['Archivo', 'sans-serif'] }
+          fontFamily: { sans: ['Onest', 'sans-serif'], mono: ['IBM Plex Mono', 'monospace'], display: ['Archivo', 'sans-serif'] },
+          animation: { spotlight: 'spotlight 2s ease .75s 1 forwards' },
+          keyframes: { spotlight: { '0%': { opacity: 0, transform: 'translate(-72%, -62%) scale(0.5)' }, '100%': { opacity: 1, transform: 'translate(-50%,-40%) scale(1)' } } }
         }
       }
     }
@@ -195,38 +198,6 @@
       border-color: #fff;
     }
 
-    /* Crosshair for Robot Scan */
-    body.hovering-head .global-cursor {
-      width: 60px;
-      height: 60px;
-      border-color: #ff003c;
-      background: transparent;
-      mix-blend-mode: normal;
-    }
-
-    body.hovering-head .global-cursor::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 8px;
-      height: 8px;
-      background: #ff003c;
-      border-radius: 50%;
-    }
-
-    body.hovering-head .global-cursor::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: -10px;
-      right: -10px;
-      height: 1px;
-      background: rgba(255, 0, 60, 0.5);
-      transform: translateY(-50%);
-      z-index: -1;
-    }
 
     @media (hover: hover) {
       * {
@@ -420,14 +391,8 @@
       }
     }
 
-    @keyframes hudScanLine {
-      0% {
-        top: 24px;
-      }
-
-      100% {
-        top: calc(100vh - 80px);
-      }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1208,16 +1173,6 @@
       const [soundOn, setSoundOn] = useState(true);
       const [hideNav, setHideNav] = useState(false);
       const audioStarted = useRef(false);
-      // Hide nav when robot section is in view
-      useEffect(() => {
-        var robotEl = document.getElementById('robot');
-        if (!robotEl) return;
-        var navObs = new IntersectionObserver(function (entries) {
-          setHideNav(entries[0].isIntersecting);
-        }, { threshold: 0.3 });
-        navObs.observe(robotEl);
-        return function () { navObs.disconnect(); };
-      }, []);
       useEffect(() => {
         var onScroll = function () {
           setScrolled(window.scrollY > 50);
@@ -2562,660 +2517,144 @@
         </>
       );
     }
-    // ========== 3D ROBOT SECTION ==========
-    function RobotSection() {
-      var bp = useBreakpoint();
-      var isMob = bp === 'mobile';
-      var [requestChat, setRequestChat] = useState(false);
-      var [isOverlayVisible, setIsOverlayVisible] = useState(false);
-      var [isHoveringHeadUI, setIsHoveringHeadUI] = useState(false);
+    // ========== SPLINE 3D SECTION ==========
+    function Spotlight(props) {
+      var className = props.className || '';
+      var fill = props.fill || 'white';
+      return React.createElement('svg', {
+        className: 'animate-spotlight pointer-events-none absolute z-[1] h-[169%] w-[138%] lg:w-[84%] opacity-0 ' + className,
+        xmlns: 'http://www.w3.org/2000/svg',
+        viewBox: '0 0 3787 2842',
+        fill: 'none'
+      },
+        React.createElement('g', { filter: 'url(#spotlight-filter)' },
+          React.createElement('ellipse', {
+            cx: '1924.71', cy: '273.501', rx: '1924.71', ry: '273.501',
+            transform: 'matrix(-0.822377 -0.568943 -0.568943 0.822377 3631.88 2291.09)',
+            fill: fill, fillOpacity: '0.21'
+          })
+        ),
+        React.createElement('defs', null,
+          React.createElement('filter', {
+            id: 'spotlight-filter', x: '0.860352', y: '0.838989',
+            width: '3785.16', height: '2840.26',
+            filterUnits: 'userSpaceOnUse', colorInterpolationFilters: 'sRGB'
+          },
+            React.createElement('feFlood', { floodOpacity: '0', result: 'BackgroundImageFix' }),
+            React.createElement('feBlend', { mode: 'normal', in: 'SourceGraphic', in2: 'BackgroundImageFix', result: 'shape' }),
+            React.createElement('feGaussianBlur', { stdDeviation: '151', result: 'effect1_foregroundBlur' })
+          )
+        )
+      );
+    }
+
+    function SplineScene(props) {
+      var scene = props.scene;
+      var className = props.className || '';
       var containerRef = useRef(null);
-      var canvasRef = useRef(null);
-      var modelRef = useRef(null);
-      var sectionRef = useRef(null);
-      var shadowRef = useRef(null);
-      var phaseRef = useRef('waiting'); // waiting | falling | bouncing | idle
-      var chatOpenRef = useRef(false);
+      var [loaded, setLoaded] = useState(false);
 
       useEffect(function () {
-        var container = containerRef.current;
-        var canvas = canvasRef.current;
-        var section = sectionRef.current;
-        if (!container || !canvas) return;
-
-        var w = container.clientWidth, h = container.clientHeight;
-        var scene = new THREE.Scene();
-
-        var camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 1000);
-        var mob = window.innerWidth < 768;
-        camera.position.set(0, 2.2, 5.5);
-        camera.lookAt(0, 1.7, 0);
-
-        var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-        renderer.setSize(w, h);
-        renderer.setPixelRatio(isMob ? 1 : Math.min(window.devicePixelRatio, 1.5));
-        renderer.outputEncoding = THREE.sRGBEncoding;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.4;
-
-        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-        var keyLight = new THREE.DirectionalLight(0xffffff, 1.8);
-        keyLight.position.set(4, 6, 3);
-        scene.add(keyLight);
-        var fillLight = new THREE.DirectionalLight(0xddeeff, 0.4);
-        fillLight.position.set(-4, 3, -1);
-        scene.add(fillLight);
-        var rimLight = new THREE.DirectionalLight(0x1a2ffb, 2.5);
-        rimLight.position.set(0, 4, -6);
-        scene.add(rimLight);
-
-        var pmremGen = new THREE.PMREMGenerator(renderer);
-        var envS = new THREE.Scene();
-        envS.background = new THREE.Color(0xffffff);
-        var eL = new THREE.PointLight(0xffffff, 3, 100);
-        eL.position.set(5, 10, 5);
-        envS.add(eL);
-        scene.environment = pmremGen.fromScene(envS).texture;
-        pmremGen.dispose();
-
-        var loader = new THREE.GLTFLoader();
-        var dracoLoader = new THREE.DRACOLoader();
-        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
-        loader.setDRACOLoader(dracoLoader);
-
-        var clock = new THREE.Clock();
-        var mixer = null;
-        var origScale = 1, baseY = 0, centerX = 0, centerZ = 0;
-
-        // Physics
-        var posY = 0, velY = 0;
-        var gravity = 18;
-        var bounceVel = 7; // gives ~1.36 units peak bounce height
-        var bounced = false;
-
-        var onModelLoaded = function (gltf) {
-          console.log('[ROBOT] Model loaded');
-          var model = gltf.scene;
-          var box = new THREE.Box3().setFromObject(model);
-          var center = box.getCenter(new THREE.Vector3());
-          var size = box.getSize(new THREE.Vector3());
-          var maxDim = Math.max(size.x, size.y, size.z);
-          var sc = 2.2 / maxDim;
-          model.scale.setScalar(sc);
-          origScale = sc;
-          baseY = -box.min.y * sc;
-          centerX = -center.x * sc;
-          centerZ = -center.z * sc;
-          // Start high above
-          posY = baseY + 8;
-          velY = 0;
-          model.position.set(centerX, posY, centerZ);
-          model.visible = false;
-          model.traverse(function (child) {
-            if (child.isMesh && child.material) {
-              var mats = Array.isArray(child.material) ? child.material : [child.material];
-              mats.forEach(function (mat) {
-                mat.color = new THREE.Color(0x0a0a0a);
-                mat.metalness = 0.6;
-                mat.roughness = 0.25;
-              });
-            }
-          });
-          scene.add(model);
-          modelRef.current = model;
-          if (gltf.animations && gltf.animations.length > 0) {
-            mixer = new THREE.AnimationMixer(model);
-            gltf.animations.forEach(function (clip) { mixer.clipAction(clip).play(); });
-          }
-          // Restart render loop if paused waiting for model
-          if (robotVisible && !aid) { try { tick(); } catch (e) { } }
-        };
-
-        // Lazy load: only start when section is near viewport
-        var modelLoading = false;
-        var startModelLoad = function () {
-          if (modelLoading) return;
-          modelLoading = true;
-          console.log('[ROBOT] Starting model load...');
-          loader.load('model.glb', onModelLoaded,
-            function (p) { if (p.total) console.log('[ROBOT] Loading:', Math.round(p.loaded / p.total * 100) + '%'); },
-            function (e) { console.error('[ROBOT] Load failed', e); }
-          );
-        };
-        var preloadObs = new IntersectionObserver(function (entries) {
-          if (entries[0].isIntersecting) {
-            startModelLoad();
-            preloadObs.disconnect();
-          }
-        }, { rootMargin: '0px 0px 600px 0px' });
-        if (section) preloadObs.observe(section);
-
-        // Ground shadow (canvas-generated radial gradient)
-        var shCanvas = document.createElement('canvas');
-        shCanvas.width = 128; shCanvas.height = 128;
-        var shCtx = shCanvas.getContext('2d');
-        var shGrad = shCtx.createRadialGradient(64, 64, 0, 64, 64, 64);
-        shGrad.addColorStop(0, 'rgba(0,0,0,0.25)');
-        shGrad.addColorStop(0.5, 'rgba(0,0,0,0.1)');
-        shGrad.addColorStop(1, 'rgba(0,0,0,0)');
-        shCtx.fillStyle = shGrad;
-        shCtx.fillRect(0, 0, 128, 128);
-        var shadowTex = new THREE.CanvasTexture(shCanvas);
-        var shadowMesh = new THREE.Mesh(
-          new THREE.PlaneGeometry(3.5, 3.5),
-          new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false })
-        );
-        shadowMesh.rotation.x = -Math.PI / 2;
-        shadowMesh.position.set(0, 0.01, 0);
-        shadowMesh.visible = false;
-        scene.add(shadowMesh);
-
-        // Listeners for React state sync
-        var onScanInitiated = function () {
-          setRequestChat(true);
-        };
-        var onScanEnded = function () {
-          isScanning = false;
-        };
-        window.addEventListener('robotScanInitiated', onScanInitiated);
-        window.addEventListener('robotScanEnded', onScanEnded);
-
-        // Raycasting for "Retina Scan" interaction
-        var raycaster = new THREE.Raycaster();
-        var mouseVec = new THREE.Vector2();
-        var isHoveringHead = false;
-        var isScanning = false;
-        var cameraZoomP = 0; // 0 = idle, 1 = zoomed in
-        var defaultCamPos = new THREE.Vector3(0, 2.2, 5.5);
-        var targetCamPos = new THREE.Vector3(0, 1.6, 2.5); // Adjusted to avoid pixelation
-        var defaultLookAt = new THREE.Vector3(0, 1.7, 0);
-        var targetLookAt = new THREE.Vector3(0, 1.6, 0); // Look exactly at head
-
-        // Rings for visual effect
-        var rings = [];
-        for (let i = 0; i < 3; i++) {
-          let geo = new THREE.RingGeometry(0.8 + i * 0.2, 0.82 + i * 0.2, 64);
-          let mat = new THREE.MeshBasicMaterial({ color: 0x1a2ffb, transparent: true, opacity: 0, side: THREE.DoubleSide });
-          let ring = new THREE.Mesh(geo, mat);
-          ring.rotation.x = Math.PI / 2;
-          scene.add(ring);
-          rings.push({ mesh: ring, baseSpeed: 0.5 + i * 0.5, speedMult: 1, baseOp: 0.3 - i * 0.1 });
-        }
-
-        // Mouse tracking
-        var mx = 0.5, my = 0.5, curRY = 0, curTX = 0;
-        var rawMx = 0, rawMy = 0; // For raycaster (-1 to 1)
-
-        var onMove = function (e) {
-          if (isScanning) return; // Lock mouse during scan
-          var rect = section.getBoundingClientRect();
-          mx = (e.clientX - rect.left) / rect.width;
-          my = (e.clientY - rect.top) / rect.height;
-          rawMx = (mx * 2) - 1;
-          rawMy = -(my * 2) + 1;
-
-          if (modelRef.current && phaseRef.current === 'idle') {
-            mouseVec.set(rawMx, rawMy);
-            raycaster.setFromCamera(mouseVec, camera);
-            var intersects = raycaster.intersectObject(modelRef.current, true);
-
-            var hitHead = false;
-            if (intersects.length > 0) {
-              // Determine if we hit the upper part of the body (head area)
-              var point = intersects[0].point;
-              // The robot is ~2.2 units tall (from Y=0 to Y=2.2)
-              // Head sits roughly above Y=1.2
-              if (point.y > 1.2) {
-                hitHead = true;
-              }
-            }
-
-            if (hitHead && !isHoveringHead) {
-              isHoveringHead = true;
-              setIsHoveringHeadUI(true);
-              document.body.classList.add('hovering-head'); // trigger custom cursor change
-              // Activate rings
-              rings.forEach(r => { r.mesh.position.set(centerX, 1.8, centerZ); });
-            } else if (!hitHead && isHoveringHead) {
-              isHoveringHead = false;
-              setIsHoveringHeadUI(false);
-              document.body.classList.remove('hovering-head');
-            }
-          }
-        };
-        section.addEventListener('mousemove', onMove);
-        var onTouch = function (e) {
-          if (isScanning) return;
-          if (e.touches.length > 0) {
-            var rect = section.getBoundingClientRect();
-            mx = (e.touches[0].clientX - rect.left) / rect.width;
-            my = (e.touches[0].clientY - rect.top) / rect.height;
-            rawMx = (mx * 2) - 1;
-            rawMy = -(my * 2) + 1;
-
-            // Simplified touch raycast
-            if (modelRef.current && phaseRef.current === 'idle') {
-              mouseVec.set(rawMx, rawMy);
-              raycaster.setFromCamera(mouseVec, camera);
-              var intersects = raycaster.intersectObject(modelRef.current, true);
-              if (intersects.length > 0 && intersects[0].point.y > 1.2) {
-                if (!isHoveringHead) {
-                  isHoveringHead = true;
-                  setIsHoveringHeadUI(true);
-                }
-                rings.forEach(r => { r.mesh.position.set(centerX, 1.8, centerZ); });
-              } else {
-                if (isHoveringHead) {
-                  isHoveringHead = false;
-                  setIsHoveringHeadUI(false);
-                }
-              }
-            }
-          }
-        };
-        section.addEventListener('touchmove', onTouch, { passive: true });
-
-        var onClick = function (e) {
-          if (isHoveringHead && phaseRef.current === 'idle' && !isScanning) {
-            isScanning = true;
-            // Trigger effect
-            document.body.classList.remove('hovering-head');
-
-            // Dispatch event so React component can show UI
-            var event = new CustomEvent('robotScanInitiated');
-            window.dispatchEvent(event);
-          }
-        };
-        section.addEventListener('click', onClick);
-
-        // Pause when off-screen, trigger fall when visible + model ready
-        var robotVisible = false;
-        var observer = new IntersectionObserver(function (entries) {
-          robotVisible = entries[0].isIntersecting;
-          if (robotVisible) {
-            setIsOverlayVisible(true);
-            if (!aid) tick();
-          }
-        }, { threshold: 0.2 });
-        if (section) observer.observe(section);
-
-        var aid;
-        var tick = function () {
-          // Pause render when off-screen and idle or waiting
-          if (!robotVisible && (phaseRef.current === 'idle' || phaseRef.current === 'waiting')) { aid = null; return; }
-          var dt = clock.getDelta();
-          if (dt > 0.1) dt = 0.016;
-          var t = clock.getElapsedTime();
-          if (mixer) mixer.update(dt);
-
-          var model = modelRef.current;
-          var phase = phaseRef.current;
-
-          if (phase === 'waiting') {
-            if (model) {
-              model.visible = false;
-              // Model loaded + section visible → start falling
-              if (robotVisible) {
-                phaseRef.current = 'falling';
-                posY = baseY + 8;
-                velY = 0;
-                bounced = false;
-              }
-            }
-          } else if (phase === 'falling' || phase === 'bouncing') {
-            if (model) {
-              model.visible = true;
-              velY -= gravity * dt;
-              posY += velY * dt;
-
-              if (posY <= baseY) {
-                posY = baseY;
-                if (!bounced) {
-                  velY = bounceVel;
-                  bounced = true;
-                  phaseRef.current = 'bouncing';
-                } else {
-                  velY = 0;
-                  phaseRef.current = 'idle';
-                  console.log('[ROBOT] Landed, entering idle');
-                }
-              }
-
-              model.position.set(centerX, posY, centerZ);
-              model.scale.setScalar(origScale);
-
-              // Shadow tracks robot, scales with height
-              shadowMesh.visible = true;
-              var heightRatio = Math.max(0, 1 - (posY - baseY) / 8);
-              shadowMesh.position.set(centerX, 0.01, centerZ + 0.5);
-              shadowMesh.scale.set(0.6 + heightRatio * 0.4, 0.6 + heightRatio * 0.4, 1);
-              shadowMesh.material.opacity = heightRatio * 0.8;
-            }
-          } else if (phase === 'idle') {
-            if (model) {
-              model.visible = true;
-              model.position.set(centerX, baseY + Math.sin(t * 0.8) * 0.015, centerZ);
-              var tRY, tTX;
-              if (chatOpenRef.current && mx > 0.5) {
-                // Chat open + cursor on right half → follow cursor
-                tRY = (mx - 0.5) * 1.2;
-                tTX = (my - 0.5) * 0.5;
-              } else if (chatOpenRef.current) {
-                // Chat open + cursor on left half → look toward chat
-                tRY = 0.5;
-                tTX = 0.15;
-              } else {
-                // Normal → follow cursor everywhere
-                tRY = (mx - 0.5) * 1.2;
-                tTX = (my - 0.5) * 0.5;
-              }
-              curRY += (tRY - curRY) * 0.06;
-              curTX += (tTX - curTX) * 0.06;
-              model.rotation.set(curTX, curRY, 0);
-              model.scale.setScalar(origScale);
-
-              // Shadow follows with slight cursor offset
-              shadowMesh.visible = true;
-              shadowMesh.position.set(centerX + curRY * 0.3, 0.01, centerZ + 0.5 + curTX * 0.2);
-              shadowMesh.scale.set(1, 1, 1);
-              shadowMesh.material.opacity = 0.8;
-              // If scanning, override lookAt and position
-              if (isScanning) {
-                cameraZoomP += (1 - cameraZoomP) * 0.05; // ease towards 1
-
-                // Spin rings faster and expand
-                rings.forEach(r => {
-                  r.speedMult += (10 - r.speedMult) * 0.05;
-                  r.mesh.rotation.z += r.baseSpeed * r.speedMult * dt;
-                  r.mesh.scale.setScalar(1 + cameraZoomP * 5);
-                  r.mesh.material.opacity = r.baseOp * (1 - cameraZoomP);
-                });
-              } else {
-                cameraZoomP += (0 - cameraZoomP) * 0.08; // ease back to 0 if chat closed
-
-                // Animate rings on hover
-                rings.forEach(r => {
-                  r.speedMult += (1 - r.speedMult) * 0.1;
-                  r.mesh.rotation.z += r.baseSpeed * r.speedMult * dt;
-                  let targetOp = isHoveringHead ? r.baseOp : 0;
-                  r.mesh.material.opacity += (targetOp - r.mesh.material.opacity) * 0.1;
-                  r.mesh.scale.setScalar(1 + Math.sin(t * 2 + r.baseSpeed) * 0.05);
-                });
-              }
-
-              // Apply camera transform based on zoom progress
-              var currentPos = new THREE.Vector3().lerpVectors(defaultCamPos, targetCamPos, cameraZoomP);
-              camera.position.copy(currentPos);
-
-              var currentLook = new THREE.Vector3().lerpVectors(defaultLookAt, targetLookAt, cameraZoomP);
-              camera.lookAt(currentLook);
-
-              // Blur background elements using a CSS filter on the container based on zoom
-              if (isScanning && containerRef.current) {
-                containerRef.current.style.filter = `blur(${cameraZoomP * 10}px)`;
-              } else if (!isScanning && containerRef.current) {
-                containerRef.current.style.filter = `blur(${cameraZoomP * 10}px)`;
-                if (cameraZoomP < 0.01) containerRef.current.style.filter = 'none';
-              }
-            }
-
-          }
-
-          renderer.render(scene, camera);
-          aid = requestAnimationFrame(tick);
-        };
-        tick();
-
-        var onResize = function () {
-          w = container.clientWidth; h = container.clientHeight;
-          camera.position.set(0, 2.2, 5.5);
-          camera.lookAt(0, 1.7, 0);
-          camera.aspect = w / h;
-          camera.updateProjectionMatrix();
-          renderer.setSize(w, h);
-        };
-        window.addEventListener('resize', onResize);
-
+        if (!containerRef.current) return;
+        var viewer = document.createElement('spline-viewer');
+        viewer.setAttribute('url', scene);
+        viewer.style.width = '100%';
+        viewer.style.height = '100%';
+        viewer.addEventListener('load', function () { setLoaded(true); });
+        containerRef.current.appendChild(viewer);
         return function () {
-          cancelAnimationFrame(aid);
-          if (observer) observer.disconnect();
-          preloadObs.disconnect();
-          section.removeEventListener('mousemove', onMove);
-          section.removeEventListener('touchmove', onTouch);
-          section.removeEventListener('click', onClick);
-          window.removeEventListener('resize', onResize);
-          window.removeEventListener('robotScanInitiated', onScanInitiated);
-          window.removeEventListener('robotScanEnded', onScanEnded);
-          if (mixer) mixer.stopAllAction();
-          scene.traverse(function (o) {
-            if (o.geometry) o.geometry.dispose();
-            if (o.material) {
-              if (Array.isArray(o.material)) o.material.forEach(function (m) { m.dispose(); });
-              else o.material.dispose();
-            }
-          });
-          renderer.dispose();
-          dracoLoader.dispose();
+          if (containerRef.current && viewer.parentNode === containerRef.current) {
+            containerRef.current.removeChild(viewer);
+          }
         };
+      }, [scene]);
+
+      return React.createElement('div', { ref: containerRef, className: className, style: { position: 'relative' } },
+        !loaded && React.createElement('div', {
+          style: {
+            position: 'absolute', inset: 0, display: 'flex',
+            alignItems: 'center', justifyContent: 'center'
+          }
+        },
+          React.createElement('div', {
+            style: {
+              width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.15)',
+              borderTopColor: '#1a2ffb', borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }
+          })
+        )
+      );
+    }
+
+    function SplineSection() {
+      var bp = useBreakpoint();
+      var isMob = bp === 'mobile';
+      var sectionRef = useRef(null);
+      var [isVisible, setIsVisible] = useState(false);
+
+      useEffect(function () {
+        if (!sectionRef.current) return;
+        var obs = new IntersectionObserver(function (entries) {
+          if (entries[0].isIntersecting) setIsVisible(true);
+        }, { threshold: 0.1 });
+        obs.observe(sectionRef.current);
+        return function () { obs.disconnect(); };
       }, []);
 
+
       return (
-        <section id="robot" ref={sectionRef} style={{
-          position: 'relative',
-          background: '#0a0a0a',
-          overflow: 'hidden',
-          height: '100vh',
-          marginTop: '-1px', // Fix for subpixel rendering gap between sections
-          paddingTop: '1px',
+        <section ref={sectionRef} id="spline-scene" style={{
+          position: "relative", width: "100%",
+          minHeight: isMob ? "500px" : "600px",
+          background: "rgba(0,0,0,0.96)",
+          overflow: "hidden", borderRadius: "0"
         }}>
-          {/* 3D Canvas OR Video placeholder */}
-          <div ref={containerRef} data-scene-rect style={{
-            width: '100%', height: '100%',
-            position: 'absolute', top: 0, left: 0, zIndex: 2,
-          }}>
-            <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%' }} />
-          </div>
-          {/* Floor glow */}
+          <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
+
           <div style={{
-            position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-            width: '80%', height: '40%',
-            background: 'radial-gradient(ellipse at center bottom, rgba(26,47,251,0.08) 0%, rgba(26,47,251,0.03) 40%, transparent 70%)',
-            pointerEvents: 'none', zIndex: 1,
-          }} />
-
-          {/* Massive Kinetic Text - Row 1 (Left to Right) */}
-          {!isMob && (
-            <div style={{
-              position: 'absolute', top: '40%', left: '0', right: '0',
-              transform: 'translateY(-50%)',
-              zIndex: 1, pointerEvents: 'none',
-              opacity: requestChat ? 0 : (isOverlayVisible ? 1 : 0),
-              transition: 'opacity 1.2s ease',
-              width: '100vw', overflow: 'hidden',
-            }}>
-              <div style={{
-                display: 'flex', whiteSpace: 'nowrap',
-                fontFamily: 'Archivo, sans-serif', fontSize: 'clamp(5rem, 15vw, 25rem)', fontWeight: 800,
-                lineHeight: 0.9, userSelect: 'none',
-                animation: 'marquee-reverse 45s linear infinite',
-                animationPlayState: requestChat ? 'paused' : 'running',
-                animationDuration: isHoveringHeadUI ? '20s' : '45s',
-                color: isHoveringHeadUI ? 'rgba(26, 47, 251, 0.08)' : 'rgba(255, 255, 255, 0.03)',
-                textShadow: isHoveringHeadUI ? '0 0 40px rgba(26, 47, 251, 0.3)' : '0 0 20px rgba(255,255,255,0.02)',
-                WebkitTextStroke: isMob ? '1px rgba(255,255,255,0.05)' : '2px rgba(255,255,255,0.05)',
-                transition: 'color 0.8s ease, text-shadow 0.8s ease',
-              }}>
-                <span style={{ paddingRight: '50px' }}>
-                  [SYS.REQ] TARGET ACQUIRED // CLICK ON THE HEAD FOR AI CHAT...
-                </span>
-                <span style={{ paddingRight: '50px' }}>
-                  [SYS.REQ] TARGET ACQUIRED // CLICK ON THE HEAD FOR AI CHAT...
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Massive Kinetic Text - Row 2 (Right to Left) */}
-          {!isMob && (
-            <div style={{
-              position: 'absolute', top: '60%', left: '0', right: '0',
-              transform: 'translateY(-50%)',
-              zIndex: 1, pointerEvents: 'none',
-              opacity: requestChat ? 0 : (isOverlayVisible ? 1 : 0),
-              transition: 'opacity 1.2s ease',
-              width: '100vw', overflow: 'hidden',
-            }}>
-              <div style={{
-                display: 'flex', whiteSpace: 'nowrap',
-                fontFamily: 'Archivo, sans-serif', fontSize: 'clamp(5rem, 15vw, 25rem)', fontWeight: 800,
-                lineHeight: 0.9, userSelect: 'none',
-                animation: 'marquee 40s linear infinite',
-                animationPlayState: requestChat ? 'paused' : 'running',
-                animationDuration: isHoveringHeadUI ? '20s' : '40s',
-                color: isHoveringHeadUI ? 'rgba(26, 47, 251, 0.08)' : 'rgba(255, 255, 255, 0.03)',
-                textShadow: isHoveringHeadUI ? '0 0 40px rgba(26, 47, 251, 0.3)' : '0 0 20px rgba(255,255,255,0.02)',
-                WebkitTextStroke: isMob ? '1px rgba(255,255,255,0.05)' : '2px rgba(255,255,255,0.05)',
-                transition: 'color 0.8s ease, text-shadow 0.8s ease',
-              }}>
-                <span style={{ paddingRight: '50px' }}>
-                  ACTION: &gt;&gt; CLICK HEAD TO CHAT &lt;&lt; // STANDBY MODE //
-                </span>
-                <span style={{ paddingRight: '50px' }}>
-                  ACTION: &gt;&gt; CLICK HEAD TO CHAT &lt;&lt; // STANDBY MODE //
-                </span>
-              </div>
-            </div>
-          )}
-
-          <StunChat
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              height: '80%', // Increased height
-            }}
-            onToggle={function (isOpen) {
-              chatOpenRef.current = isOpen;
-              if (!isOpen) {
-                setRequestChat(false);
-                // Tell 3D scene to un-scan (we use DOM styling logic in the hook, but we need to reset the flag)
-                // We can do this cleanly by listening to the inverse event or letting react state drive if possible
-                // For now, we'll dispatch an event back
-                window.dispatchEvent(new CustomEvent('robotScanEnded'));
-              }
-            }}
-            externalOpen={requestChat}
-          />
-
-          {/* HUD Corner Brackets */}
-          {
-            [
-              { top: '24px', left: '24px', borderTop: '1px solid rgba(26,47,251,0.3)', borderLeft: '1px solid rgba(26,47,251,0.3)' },
-              { top: '24px', right: '24px', borderTop: '1px solid rgba(26,47,251,0.3)', borderRight: '1px solid rgba(26,47,251,0.3)' },
-              { bottom: '24px', left: '24px', borderBottom: '1px solid rgba(26,47,251,0.3)', borderLeft: '1px solid rgba(26,47,251,0.3)' },
-              { bottom: '24px', right: '24px', borderBottom: '1px solid rgba(26,47,251,0.3)', borderRight: '1px solid rgba(26,47,251,0.3)' },
-            ].map(function (s, i) {
-              return React.createElement('div', {
-                key: 'hud-corner-' + i, style: Object.assign({}, s, {
-                  position: 'absolute',
-                  width: isMob ? '24px' : '40px',
-                  height: isMob ? '24px' : '40px',
-                  pointerEvents: 'none',
-                  zIndex: 5,
-                })
-              });
-            })
-          }
-
-          {/* Mobile AI Chat Button */}
-          {isMob && (
-            <div style={{
-              position: 'absolute', bottom: '110px', left: '5%', right: '5%',
-              zIndex: 30,
-              opacity: requestChat ? 0 : (isOverlayVisible ? 1 : 0),
-              transition: 'opacity 0.6s ease',
-              pointerEvents: requestChat || !isOverlayVisible ? 'none' : 'auto',
-            }}>
-              <button onClick={function () { setRequestChat(true); }} style={{
-                width: '100%',
-                background: 'rgba(26,47,251,0.1)',
-                backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)',
-                border: '1px solid rgba(26,47,251,0.5)',
-                color: '#fff',
-                height: '60px',
-                borderRadius: '16px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
-                fontFamily: 'Archivo, sans-serif', fontWeight: 600,
-                fontSize: '18px', textTransform: 'uppercase', letterSpacing: '0.05em',
-                boxShadow: '0 0 20px rgba(26,47,251,0.2)',
-              }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                </svg>
-                Открыть AI-чат
-              </button>
-            </div>
-          )}
-
-          {/* Telegram Button */}
-          <div style={{
-            position: 'absolute', bottom: '40px', right: '5%',
-            zIndex: 10,
-            opacity: requestChat ? 0 : (isOverlayVisible ? 1 : 0),
-            transition: 'opacity 0.6s ease',
-            pointerEvents: requestChat || !isOverlayVisible ? 'none' : 'auto',
+            display: "flex", flexDirection: isMob ? "column" : "row",
+            height: "100%", minHeight: isMob ? "500px" : "600px"
           }}>
-            <MagneticWrap strength={0.4}>
-              <a href="https://t.me/stun_agency" target="_blank" rel="noopener noreferrer" style={{
-                background: '#1a2ffb',
-                color: '#fff',
-                height: '56px',
-                borderRadius: '100px',
-                padding: '0 32px',
-                display: 'flex', alignItems: 'center', gap: '12px',
-                textDecoration: 'none',
-                fontFamily: 'Archivo, sans-serif', fontWeight: 600,
-                fontSize: '16px', textTransform: 'uppercase', letterSpacing: '0.05em',
-                boxShadow: '0 0 30px rgba(26,47,251,0.4)',
-                cursor: 'none',
-                transition: 'background 0.3s, transform 0.3s, box-shadow 0.3s',
-              }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '0 0 40px rgba(26,47,251,0.8)';
-                  e.currentTarget.style.transform = 'scale(1.05)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = '0 0 30px rgba(26,47,251,0.4)';
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span>Telegram</span>
-              </a>
-            </MagneticWrap>
+            {/* Left content */}
+            <div style={{
+              flex: 1, padding: isMob ? "40px 24px 0" : "48px",
+              position: "relative", zIndex: 10,
+              display: "flex", flexDirection: "column", justifyContent: "center"
+            }}>
+              <h2 style={{
+                fontSize: isMob ? "32px" : "48px", fontWeight: 700,
+                fontFamily: "Archivo, sans-serif",
+                backgroundImage: "linear-gradient(to bottom, #fafafa, #a3a3a3)",
+                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                lineHeight: 1.1, margin: 0
+              }}>
+                Interactive 3D
+              </h2>
+              <p style={{
+                marginTop: "16px", color: "#d4d4d4", maxWidth: "480px",
+                fontSize: isMob ? "15px" : "17px", lineHeight: 1.6,
+                fontFamily: "Onest, sans-serif"
+              }}>
+                Bring your UI to life with beautiful 3D scenes. Create immersive experiences
+                that capture attention and enhance your design.
+              </p>
+            </div>
+
+            {/* Right content — Spline 3D */}
+            <div style={{
+              flex: 1, position: "relative",
+              minHeight: isMob ? "300px" : "400px"
+            }}>
+              {isVisible && (
+                <SplineScene
+                  scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
+                  className="w-full h-full"
+                />
+              )}
+            </div>
           </div>
-
-          {/* HUD Scanning Line */}
-          {
-            !isMob && React.createElement('div', {
-              style: {
-                position: 'absolute',
-                left: 0,
-                width: '100%',
-                height: '1px',
-                background: 'rgba(26,47,251,0.06)',
-                boxShadow: '0 0 2px rgba(26,47,251,0.1)',
-                pointerEvents: 'none',
-                zIndex: 5,
-                animation: 'hudScanLine 8s linear infinite',
-              }
-            })
-          }
-
-        </section >
+        </section>
       );
     }
 
@@ -3306,8 +2745,8 @@
 
 
 
-          {/* ROBOT — last section */}
-          <RobotSection />
+          {/* SPLINE 3D */}
+          <SplineSection />
 
           {/* CONTACT — временно убрано */}
 
