@@ -2522,7 +2522,6 @@
       var isMob = bp === 'mobile';
       var sectionRef = useRef(null);
       var rectRef = useRef(null);
-      var progressRef = useRef(0);
 
       useEffect(function () {
         var section = sectionRef.current;
@@ -2534,71 +2533,68 @@
           var vh = window.innerHeight;
           var sectionH = section.offsetHeight;
 
-          // Progress: 0 when section top hits viewport bottom, 1 when section bottom hits viewport top
+          // p: 0 at section enter → 1 at section exit
           var raw = (vh - bounds.top) / (sectionH + vh);
           var p = Math.max(0, Math.min(1, raw));
-          progressRef.current = p;
 
-          // Fly-in transforms based on scroll progress
-          // Phase 1 (0→0.4): fly in from depth — rotateX decreases, scale increases, translateY moves up
-          // Phase 2 (0.4→0.7): settle into final position — flatten out
-          // Phase 3 (0.7→1): hold position, slight float
+          // Phase 1 (0→0.3): enter from left-top, grow
+          // Phase 2 (0.3→0.7): hold center, full size
+          // Phase 3 (0.7→1): exit right, shrink slightly
 
-          var rotateX, scale, translateY, opacity;
+          var translateX, translateY, scale, opacity;
 
-          if (p < 0.4) {
-            // Flying in
-            var t = p / 0.4; // 0→1 within phase 1
+          if (p < 0.3) {
+            // Enter: left-top → center, medium → large
+            var t = p / 0.3;
             var ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
-            rotateX = 45 * (1 - ease);   // 45° → 0°
-            scale = 0.5 + 0.5 * ease;     // 0.5 → 1.0
-            translateY = 200 * (1 - ease); // 200px → 0px
-            opacity = 0.3 + 0.7 * ease;   // 0.3 → 1.0
+            translateX = -120 * (1 - ease); // -120vw → 0
+            translateY = -15 * (1 - ease);  // -15vh → 0
+            scale = 0.65 + 0.35 * ease;     // 0.65 → 1.0
+            opacity = 0.4 + 0.6 * ease;     // 0.4 → 1.0
           } else if (p < 0.7) {
-            // Settled
-            var t2 = (p - 0.4) / 0.3;
-            rotateX = 0;
-            scale = 1.0;
+            // Hold center
+            translateX = 0;
             translateY = 0;
+            scale = 1.0;
             opacity = 1;
           } else {
-            // Gentle float at rest
-            rotateX = 0;
-            scale = 1.0;
-            translateY = 0;
-            opacity = 1;
+            // Exit: center → right
+            var t2 = (p - 0.7) / 0.3;
+            var ease2 = t2 * t2 * t2; // easeInCubic
+            translateX = 120 * ease2;       // 0 → 120vw
+            translateY = -10 * ease2;       // 0 → -10vh (slight up)
+            scale = 1.0 - 0.15 * ease2;    // 1.0 → 0.85
+            opacity = 1.0 - 0.6 * ease2;   // 1.0 → 0.4
           }
 
-          rect.style.transform = 'perspective(1200px) rotateX(' + rotateX + 'deg) scale(' + scale + ') translateY(' + translateY + 'px)';
+          rect.style.transform = 'translate(' + translateX + 'vw, ' + translateY + 'vh) scale(' + scale + ')';
           rect.style.opacity = opacity;
         };
 
         window.addEventListener('scroll', onScroll, { passive: true });
-        onScroll(); // initial position
+        onScroll();
         return function () { window.removeEventListener('scroll', onScroll); };
       }, []);
 
       return (
         <section ref={sectionRef} style={{
           position: 'relative',
-          height: isMob ? '250vh' : '300vh',
-          background: '#f0f1fa',
+          height: isMob ? '300vh' : '400vh',
+          background: '#0a0a0a',
           zIndex: 1
         }}>
           <div style={{
             position: 'sticky', top: 0, height: '100vh',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            perspective: '1200px',
             overflow: 'hidden'
           }}>
             <div ref={rectRef} style={{
-              width: isMob ? '90vw' : '75vw',
+              width: isMob ? '88vw' : '70vw',
               height: isMob ? '50vh' : '70vh',
-              borderRadius: isMob ? '24px' : '32px',
-              background: '#0a0a0a',
-              transformOrigin: 'center bottom',
+              borderRadius: isMob ? '20px' : '28px',
+              background: '#1a1a1a',
               willChange: 'transform, opacity',
-              boxShadow: '0 40px 80px rgba(0,0,0,0.3)',
+              boxShadow: '0 30px 80px rgba(0,0,0,0.6)',
               overflow: 'hidden',
               display: 'flex',
               alignItems: 'center',
@@ -2606,7 +2602,7 @@
             }}>
               {/* Placeholder — video will go here */}
               <span style={{
-                color: 'rgba(255,255,255,0.15)',
+                color: 'rgba(255,255,255,0.1)',
                 fontSize: isMob ? '24px' : '40px',
                 fontFamily: 'Archivo, sans-serif',
                 fontWeight: 700,
