@@ -1758,10 +1758,6 @@
                 expertiseRef.current.style.paddingLeft = (window.innerWidth * 0.33) + 'px';
               }
             }, 400);
-            if (descRef.current) {
-              descRef.current.style.transform = 'translateX(0)';
-              descRef.current.style.opacity = '1';
-            }
             observer.disconnect();
           }
         }, { threshold: 0.05 });
