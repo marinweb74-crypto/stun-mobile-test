@@ -3248,7 +3248,7 @@
           <Navigation initialSound={initialSound} />
 
           {/* HERO */}
-          <section className="min-h-screen flex flex-col justify-end items-center bg-[#f0f1fa] relative" style={{ paddingBottom: isMob ? '8px' : '64px' }}>
+          <section className="min-h-screen flex flex-col items-center bg-[#f0f1fa] relative" style={{ paddingBottom: isMob ? '8px' : '64px', justifyContent: isMob ? 'flex-start' : 'flex-end' }}>
             {/* Text grid — Lusion-style 12-column layout */}
             <div style={{
               display: 'grid',
@@ -3257,9 +3257,9 @@
               width: '100%',
               paddingLeft: '5%', paddingRight: '5%',
               paddingTop: isMob ? '80px' : '38px',
-              paddingBottom: '30px',
-              position: 'absolute',
-              top: 0, left: 0, right: 0,
+              paddingBottom: isMob ? '20px' : '30px',
+              position: isMob ? 'relative' : 'absolute',
+              top: isMob ? 'auto' : 0, left: isMob ? 'auto' : 0, right: isMob ? 'auto' : 0,
               zIndex: 3,
             }}>
               <h1 style={{
