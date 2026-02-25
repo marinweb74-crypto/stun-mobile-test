@@ -2516,39 +2516,30 @@
         </>
       );
     }
-    // ========== PORTFOLIO — SCROLL FLY-IN WITH WAVE ==========
-    // Build a wavy polygon clip-path: left edge anchored, wave grows toward right
-    function buildWavyClip(amplitude, phase, rx) {
-      // rx = border-radius in % (approx)
+    // ========== PORTFOLIO — SCROLL FLY-IN WITH RIPPLE ==========
+    function buildRippleClip(amp, phase) {
       var pts = [];
-      var N = 16; // points per edge
-
-      // Top edge: left → right, wave grows toward right
+      var N = 14;
       for (var i = 0; i <= N; i++) {
         var t = i / N;
-        var x = t * 100;
-        var waveStr = t * t; // quadratic: stronger toward right
-        var y = amplitude * waveStr * Math.sin(t * Math.PI * 3 + phase);
-        pts.push(x.toFixed(2) + '% ' + y.toFixed(2) + '%');
+        var y = amp * Math.sin(t * Math.PI * 2.5 + phase);
+        pts.push((t * 100).toFixed(1) + '% ' + y.toFixed(1) + '%');
       }
-
-      // Right edge: top → bottom
       for (var i = 1; i <= N; i++) {
         var t = i / N;
-        var x = 100 + amplitude * 0.7 * Math.sin(t * Math.PI * 2 + phase);
-        var y = t * 100;
-        pts.push(x.toFixed(2) + '% ' + y.toFixed(2) + '%');
+        var x = 100 + amp * Math.sin(t * Math.PI * 2.5 + phase + 1.5);
+        pts.push(x.toFixed(1) + '% ' + (t * 100).toFixed(1) + '%');
       }
-
-      // Bottom edge: right → left, wave grows toward right (mirror)
       for (var i = N; i >= 0; i--) {
         var t = i / N;
-        var x = t * 100;
-        var waveStr = t * t;
-        var y = 100 + amplitude * waveStr * Math.sin(t * Math.PI * 3 + phase + Math.PI);
-        pts.push(x.toFixed(2) + '% ' + y.toFixed(2) + '%');
+        var y = 100 + amp * Math.sin(t * Math.PI * 2.5 + phase + 3);
+        pts.push((t * 100).toFixed(1) + '% ' + y.toFixed(1) + '%');
       }
-
+      for (var i = N - 1; i >= 1; i--) {
+        var t = i / N;
+        var x = amp * Math.sin(t * Math.PI * 2.5 + phase + 4.5);
+        pts.push(x.toFixed(1) + '% ' + (t * 100).toFixed(1) + '%');
+      }
       return 'polygon(' + pts.join(', ') + ')';
     }
 
@@ -2563,7 +2554,7 @@
         var rect = rectRef.current;
         if (!section || !rect) return;
 
-        var maxAmp = isMob ? 6 : 8; // max wave amplitude in %
+        var maxAmp = isMob ? 4 : 5;
 
         var onScroll = function () {
           var bounds = section.getBoundingClientRect();
@@ -2573,43 +2564,40 @@
           var raw = (vh - bounds.top) / (sectionH + vh);
           var p = Math.max(0, Math.min(1, raw));
 
-          var translateX, translateY, scale, opacity, waveAmp, wavePhase;
+          var translateX, translateY, scale, opacity, rippleAmp, ripplePhase;
 
-          if (p < 0.3) {
-            // Phase 1: Enter from left-top with strong wave
-            var t = p / 0.3;
+          if (p < 0.35) {
+            var t = p / 0.35;
             var ease = 1 - Math.pow(1 - t, 3);
-            translateX = -110 * (1 - ease);
-            translateY = -12 * (1 - ease);
-            scale = 0.65 + 0.35 * ease;
-            opacity = 0.4 + 0.6 * ease;
-            waveAmp = maxAmp * (1 - ease); // strong → 0
-            wavePhase = p * 20; // wave undulates as it moves
-          } else if (p < 0.7) {
-            // Phase 2: Hold center, flat
+            translateX = -60 * (1 - ease);
+            translateY = -5 * (1 - ease);
+            scale = 0.2 + 0.8 * ease;
+            opacity = 0.3 + 0.7 * ease;
+            rippleAmp = maxAmp * (1 - ease);
+            ripplePhase = p * 25;
+          } else if (p < 0.65) {
             translateX = 0;
             translateY = 0;
             scale = 1.0;
             opacity = 1;
-            waveAmp = 0;
-            wavePhase = 0;
+            rippleAmp = 0;
+            ripplePhase = 0;
           } else {
-            // Phase 3: Exit right with wave building again
-            var t2 = (p - 0.7) / 0.3;
+            var t2 = (p - 0.65) / 0.35;
             var ease2 = t2 * t2 * t2;
-            translateX = 110 * ease2;
-            translateY = -8 * ease2;
-            scale = 1.0 - 0.12 * ease2;
-            opacity = 1.0 - 0.6 * ease2;
-            waveAmp = maxAmp * ease2; // 0 → strong
-            wavePhase = (1 - p) * 20;
+            translateX = 60 * ease2;
+            translateY = -3 * ease2;
+            scale = 1.0 - 0.1 * ease2;
+            opacity = 1.0 - 0.7 * ease2;
+            rippleAmp = maxAmp * ease2;
+            ripplePhase = (1 - p) * 25;
           }
 
           rect.style.transform = 'translate(' + translateX + 'vw, ' + translateY + 'vh) scale(' + scale + ')';
           rect.style.opacity = opacity;
 
-          if (waveAmp > 0.05) {
-            rect.style.clipPath = buildWavyClip(waveAmp, wavePhase, 3);
+          if (rippleAmp > 0.08) {
+            rect.style.clipPath = buildRippleClip(rippleAmp, ripplePhase);
             rect.style.borderRadius = '0';
           } else {
             rect.style.clipPath = 'none';
@@ -2625,7 +2613,7 @@
       return (
         <section ref={sectionRef} style={{
           position: 'relative',
-          height: isMob ? '300vh' : '400vh',
+          height: isMob ? '350vh' : '450vh',
           background: '#0a0a0a',
           zIndex: 1
         }}>
@@ -2635,8 +2623,8 @@
             overflow: 'hidden'
           }}>
             <div ref={rectRef} style={{
-              width: isMob ? '88vw' : '70vw',
-              height: isMob ? '50vh' : '70vh',
+              width: isMob ? '92vw' : '88vw',
+              height: isMob ? '55vh' : '80vh',
               borderRadius: isMob ? '20px' : '28px',
               background: '#1a1a1a',
               willChange: 'transform, opacity, clip-path',
@@ -2646,14 +2634,13 @@
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              {/* Placeholder — video will go here */}
               <span style={{
-                color: 'rgba(255,255,255,0.1)',
-                fontSize: isMob ? '24px' : '40px',
+                color: 'rgba(255,255,255,0.08)',
+                fontSize: isMob ? '24px' : '48px',
                 fontFamily: 'Archivo, sans-serif',
                 fontWeight: 700,
                 textTransform: 'uppercase',
-                letterSpacing: '4px',
+                letterSpacing: '6px',
                 userSelect: 'none'
               }}>PORTFOLIO</span>
             </div>
