@@ -3250,16 +3250,20 @@
 
       var handleLoaded = function () {
         setPhase('ready');
-        // Sound starts on first user interaction (click/touch anywhere)
+        // Sound starts on first user interaction
+        var started = false;
         var startSound = function () {
+          if (started) return;
+          started = true;
           globalSoundOn = true;
           globalMusic.play().catch(function () { });
-          startSpaceLoop();
-          document.removeEventListener('click', startSound);
-          document.removeEventListener('touchstart', startSound);
+          ['click', 'touchstart', 'scroll', 'mousedown', 'keydown'].forEach(function (evt) {
+            document.removeEventListener(evt, startSound);
+          });
         };
-        document.addEventListener('click', startSound, { once: true });
-        document.addEventListener('touchstart', startSound, { once: true });
+        ['click', 'touchstart', 'scroll', 'mousedown', 'keydown'].forEach(function (evt) {
+          document.addEventListener(evt, startSound, { once: true });
+        });
       };
 
       return (
