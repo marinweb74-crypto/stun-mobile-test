@@ -1240,16 +1240,8 @@
       var isMob = bp === 'mobile';
       const [scrolled, setScrolled] = useState(false);
       const [menuOpen, setMenuOpen] = useState(false);
-      const [soundOn, setSoundOn] = useState(false);
+      const [soundOn, setSoundOn] = useState(true);
       const [hideNav, setHideNav] = useState(false);
-      const initDone = useRef(false);
-
-      useEffect(() => {
-        if (initialSound && !initDone.current) {
-          initDone.current = true;
-          setSoundOn(true);
-        }
-      }, [initialSound]);
       // Hide nav when robot section is in view
       useEffect(() => {
         var robotEl = document.getElementById('robot');
@@ -1271,6 +1263,7 @@
             var vh = window.innerHeight;
             // When about section top reaches center of screen → crossfade
             if (rect.top < vh * 0.5) {
+              startSpaceLoop();
               musicTargetVol = 0;
               spaceTargetVol = 0.35;
             } else {
@@ -1287,10 +1280,12 @@
         globalSoundOn = soundOn;
         if (soundOn) {
           globalMusic.play().catch(function () { });
-          startSpaceLoop();
+          // Don't start space loop here — it starts via scroll crossfade
         } else {
           globalMusic.pause();
           stopSpaceLoop();
+          musicTargetVol = 0;
+          spaceTargetVol = 0;
         }
       }, [soundOn]);
       return (
@@ -3255,9 +3250,16 @@
 
       var handleLoaded = function () {
         setPhase('ready');
-        globalSoundOn = true;
-        globalMusic.play().catch(function () { });
-        startSpaceLoop();
+        // Sound starts on first user interaction (click/touch anywhere)
+        var startSound = function () {
+          globalSoundOn = true;
+          globalMusic.play().catch(function () { });
+          startSpaceLoop();
+          document.removeEventListener('click', startSound);
+          document.removeEventListener('touchstart', startSound);
+        };
+        document.addEventListener('click', startSound, { once: true });
+        document.addEventListener('touchstart', startSound, { once: true });
       };
 
       return (
